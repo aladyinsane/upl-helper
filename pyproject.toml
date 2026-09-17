@@ -10,12 +10,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "openpyxl>=3.1",
+    "pandas>=2.0",
     "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
-# pandas arrives with the canonical model in SPEC-0003, not before.
-model = ["pandas>=2.0"]
 dev = [
     "pytest>=7.4",
     "ruff>=0.4",

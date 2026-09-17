@@ -89,3 +89,44 @@ def test_select_header_rows_ignores_a_distant_adjacent_row() -> None:
 
 def test_no_candidates_yields_no_header() -> None:
     assert select_header_rows([]) == []
+
+
+def test_a_text_heavy_data_row_is_not_mistaken_for_a_second_header(
+    tmp_path: Path,
+) -> None:
+    """Regression.
+
+    A UPL demonstration row is mostly text — provider name, CCN, ownership,
+    currency-formatted amounts — so it scores almost as well as the header
+    above it. Score alone joined it to the header and produced garbage headers
+    like "Provider Name / Example State Hospital". The shape comparison against
+    the rows below is what rejects it.
+    """
+    from tests.builders import upl_workbook
+
+    book = upl_workbook(tmp_path / "upl.xlsx")
+    sheet = profile_path(book).sheets[0]
+    assert sheet.header.rows == [1]
+    headers = {c.letter: c.header_text for c in sheet.columns}
+    assert headers["A"] == "Provider Name"
+    assert " / " not in (headers["B"] or "")
+
+
+def test_a_late_text_row_does_not_outscore_the_real_header(tmp_path: Path) -> None:
+    """Regression.
+
+    A row after a blank gap has only a row or two beneath it, which used to
+    inflate its score above the real header's. The support term fixes it.
+    """
+    from tests.builders import upl_workbook
+
+    book = upl_workbook(tmp_path / "gap.xlsx", blank_row_then_more=True)
+    assert profile_path(book).sheets[0].header.rows == [1]
+
+
+def test_row_signature_distinguishes_shapes() -> None:
+    from upl_helper.profile.headers import row_signature
+
+    assert row_signature(["a", 1, None, "=B1"]) == ("s", "n", "b", "f")
+    assert row_signature(["a", "b"]) == ("s", "s")
+    assert row_signature([None, "  "]) == ("b", "b")

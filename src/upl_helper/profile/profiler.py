@@ -7,7 +7,7 @@ from typing import Any
 
 from upl_helper import __version__
 from upl_helper.profile.columns import profile_columns
-from upl_helper.profile.headers import detect_header_rows, select_header_rows
+from upl_helper.profile.headers import detect_and_select
 from upl_helper.profile.loader import LoadedWorkbook
 from upl_helper.profile.models import (
     DESCRIPTOR_VERSION,
@@ -114,8 +114,7 @@ def _nonempty_row_count(worksheet: Any) -> int:
 def profile_sheet(
     worksheet: Any, index: int, options: ProfileOptions
 ) -> SheetDescriptor:
-    candidates = detect_header_rows(worksheet)
-    header_rows = select_header_rows(candidates, options.header_row_override)
+    header_rows, candidates = detect_and_select(worksheet, options.header_row_override)
 
     return SheetDescriptor(
         name=worksheet.title,

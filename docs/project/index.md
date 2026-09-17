@@ -2,6 +2,28 @@
 
 Newest first.
 
+## 2026-09-17 — SPEC-0003 written and implemented
+
+- Canonical model, template mapping format, and extractor. 109 tests passing.
+- Checks will be written against 18 canonical fields at one row per provider
+  per period. Columns resolve by normalized header text, never by position, so
+  a CMS revision that moves columns needs no code change and one that renames
+  a header needs one alias added.
+- Ambiguity is an error, never a guess: two columns matching one field, or one
+  alias under two fields, both fail loudly. Silently picking the leftmost is
+  how a check ends up validating the wrong column.
+- Every row carries provenance (`"Sheet!F12"`), so a finding can point at a
+  cell.
+- Found and fixed a real bug in SPEC-0002's header detection while testing
+  this: a UPL data row is mostly text, so it scored nearly as well as the
+  header above it and got joined as a second header row. Fixed by comparing a
+  candidate's per-column shape against the rows below it, plus a scoring term
+  for how many consistently shaped rows sit underneath. Two regression tests.
+- `config/templates/inpatient-hospital-provisional.yaml` ships **unverified**.
+  Phase 0 replaces it. `upl extract` warns on every run until it is verified.
+- pandas is now a hard dependency.
+- Next: fixture generator, then the check engine.
+
 ## 2026-09-17 — SPEC-0002 implemented
 
 - `upl profile` and `upl unprotect` implemented, 72 tests passing.

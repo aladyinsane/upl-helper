@@ -53,3 +53,28 @@ def test_unprotect_writes_output_and_a_report(tmp_path: Path) -> None:
     assert out.exists()
     payload = yaml.safe_load(report.read_text())
     assert payload["removed_sheet_protection"] == ["Demonstration"]
+
+
+def test_extract_warns_when_the_mapping_is_unverified(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """SPEC-0003 AC-20."""
+    from tests.builders import upl_workbook
+
+    book = upl_workbook(tmp_path / "wb.xlsx")
+    out = tmp_path / "frame.csv"
+    exit_code = cli.main(
+        [
+            "extract",
+            str(book),
+            "-m",
+            "config/templates/inpatient-hospital-provisional.yaml",
+            "-o",
+            str(out),
+        ]
+    )
+    assert exit_code == 0
+    captured = capsys.readouterr().out
+    assert "not verified against a real CMS template" in captured
+    assert out.exists()
+    assert "014001" in out.read_text()
