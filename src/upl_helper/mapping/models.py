@@ -25,6 +25,9 @@ class DataRowRule:
     stop_on_blank_key: bool = True
     total_row_markers: list[str] = field(default_factory=list)
     exclude_if_normalized_in: list[str] = field(default_factory=list)
+    # Overrides max(header_rows) + 1. Some templates put non-data content
+    # (instructions, examples) between the header and the first real row.
+    start_row: int | None = None
 
 
 @dataclass

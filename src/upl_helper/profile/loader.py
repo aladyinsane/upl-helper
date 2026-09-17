@@ -31,12 +31,20 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_workbook_structure(path: str | Path) -> LoadedWorkbook:
-    """Open a workbook for structural inspection.
+def load_workbook_structure(
+    path: str | Path, *, data_only: bool = False
+) -> LoadedWorkbook:
+    """Open a workbook for structural inspection or for extraction.
 
-    Formulas are read as text rather than as cached values, because the
-    formulas are what the profiler is interested in. ``keep_vba`` preserves
-    macro-enabled workbooks.
+    ``data_only=False`` (the default) reads formulas as text rather than as
+    cached values, because the profiler wants the formulas, not the numbers
+    that happen to be sitting in the cell. Some real CMS templates (the
+    inpatient hospital methodology tabs) compute every cell by formula from a
+    single state-input sheet, so extraction needs ``data_only=True`` to read
+    the last-calculated value instead of the formula string -- Excel caches
+    that value at save time, so this only returns None for a formula that has
+    never been calculated (e.g. a workbook nobody has opened in Excel).
+    ``keep_vba`` preserves macro-enabled workbooks.
     """
     path = Path(path)
 
@@ -55,7 +63,9 @@ def load_workbook_structure(path: str | Path) -> LoadedWorkbook:
 
     try:
         workbook = openpyxl.load_workbook(
-            path, data_only=False, keep_vba=path.suffix.lower() in {".xlsm", ".xltm"}
+            path,
+            data_only=data_only,
+            keep_vba=path.suffix.lower() in {".xlsm", ".xltm"},
         )
     except Exception as exc:  # openpyxl raises a wide variety here
         raise UnsupportedWorkbookError(f"{path}: could not be opened ({exc})") from exc

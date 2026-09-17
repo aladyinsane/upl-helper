@@ -20,17 +20,17 @@ from upl_helper.checks.thresholds import Thresholds
 
 
 def test_pla001_flags_an_implausible_ccr() -> None:
-    ctx = make_context([provider(cost_to_charge_ratio=2.5)])
+    ctx = make_context([provider(cost_to_charge_ratio=4.5)])
     findings = list(pla001_ccr_range(ctx))
     assert len(findings) == 1
-    assert findings[0].observed == 2.5
+    assert findings[0].observed == 4.5
 
 
 def test_pla001_respects_thresholds() -> None:
     """AC-21. Widening the bound silences the finding."""
-    record = provider(cost_to_charge_ratio=2.5)
+    record = provider(cost_to_charge_ratio=4.5)
     assert list(pla001_ccr_range(make_context([record]))) != []
-    widened = make_context([record], thresholds=Thresholds(ccr_max=3.0))
+    widened = make_context([record], thresholds=Thresholds(ccr_max=5.0))
     assert list(pla001_ccr_range(widened)) == []
 
 

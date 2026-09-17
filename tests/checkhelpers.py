@@ -65,6 +65,8 @@ def provider(**overrides: Any) -> dict[str, Any]:
         "medicaid_cost": 400_000.0,
         "upl_amount": 500_000.0,
         "medicaid_payments_base": 300_000.0,
+        "medicaid_trend_factor": 1.0,
+        "medicaid_other_adjustment_factor": 1.0,
         "medicaid_payments_supplemental": 100_000.0,
         "medicaid_payments_total": 400_000.0,
         "upl_gap": 100_000.0,

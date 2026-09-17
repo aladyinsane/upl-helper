@@ -2,6 +2,46 @@
 
 Newest first.
 
+## 2026-09-17 — Real inpatient hospital mapping; canonical model and check fixes
+
+- Wrote `config/templates/inpatient-hospital-2022.yaml`, verified against the
+  real template (see it for the full account of the template's shape). The
+  provisional mapping stays as-is — it is a stable synthetic-fixture test
+  target, not meant to become real.
+- Two model gaps found while mapping the real template, both fixed:
+  - `cost_to_charge_ratio` only fit the Cost tab's CCR. Added
+    `payment_to_charge_ratio` for the Payment tab's analogous PTC — no
+    plausibility check for it yet, that's a follow-up.
+  - The single `trend_factor` field was ambiguous — the real template tracks
+    two independent factors per row (CMS variables 308 and 405). Split into
+    `medicaid_trend_factor` and `upl_trend_factor`. Nothing consumed the old
+    field, so this was a clean rename.
+- Real bug found and fixed: `ARI005` checked `total == base + supplemental`,
+  but CMS's own formula (variable 318) inflates only the base payment before
+  adding supplemental. As shipped, `ARI005` would have false-positived on
+  every real row with a trend factor other than `1.0` — most retrospective
+  demonstrations. Fixed to recompute the real formula; the two new factor
+  fields default to `1.0` (CMS's own "no change" convention) when a mapping
+  doesn't supply them, which collapses back to the original plain-sum check.
+- Two extractor fixes the real template exposed, neither visible against the
+  synthetic fixtures used so far:
+  - Added `data_rows.start_row` to the mapping schema. This template puts a
+    blank row and an instructions row between the header and the first real
+    row; without an explicit override, extraction assumed data started
+    immediately below the header, hit the blank row first, and silently
+    extracted zero providers from a workbook that has some.
+  - Extraction now opens workbooks with `data_only=True`, not the profiler's
+    `data_only=False`. Every column on this template's methodology tabs is a
+    formula pulling from a separate input sheet — reading formula text
+    instead of the cached calculated value would have broken extraction on
+    any real filled submission using this template, though it was invisible
+    against the blank template and literal-value test fixtures.
+- Resolved all three of SPEC-0002's open questions and all three of
+  SPEC-0003's, using the real template as evidence rather than guessing —
+  see those specs' Open Questions sections for the answers.
+- `ccr_max` raised from `1.20` to `3.00` on Lauren's domain knowledge of real
+  state data (SPEC-0004 open question 1; `ccr_min` is still a guess).
+
 ## 2026-09-17 — Phase 0: templates and guidance acquired
 
 - A Claude Code desktop app session reached `medicaid.gov` directly — both

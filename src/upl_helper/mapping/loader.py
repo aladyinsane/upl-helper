@@ -144,6 +144,7 @@ def _parse_sheet(raw: dict[str, Any], index: int) -> SheetRule:
             exclude_if_normalized_in=[
                 str(v) for v in (data_rows_raw.get("exclude_if_normalized_in") or [])
             ],
+            start_row=data_rows_raw.get("start_row"),
         ),
         ownership=_parse_ownership(raw.get("ownership"), where),
         fields=fields,

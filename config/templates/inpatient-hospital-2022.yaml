@@ -1,0 +1,344 @@
+# Inpatient hospital UPL mapping, verified against the real 2022-revision CMS
+# template (templates/upl-2022/inpatient-hospital-upl-template-2022.xlsx).
+#
+# Supersedes config/templates/inpatient-hospital-provisional.yaml for actual
+# use. That file stays in place unchanged -- it is a stable target for the
+# synthetic-fixture unit tests, not a real mapping, and its own tests assert
+# it stays unverified.
+#
+# Shape of the real template, discovered via `upl profile` plus direct
+# inspection (see docs/project/index.md, 2026-09-17 entries):
+#
+# - Provider rows live on four methodology tabs -- IP Cost, IP Payment,
+#   IP DRG, IP Per Diem -- one per CMS demonstration type, not on one flat
+#   "demonstration" sheet. A provider appears on exactly one of the four for
+#   a given demonstration year. All four are mapped here with role:
+#   demonstration; the extractor already unions every sheet sharing that
+#   role, so this needed no code change.
+# - "Required State Input - IPH" is the sheet a state actually types into.
+#   The four methodology tabs are auto-populated views computed from it by
+#   formula (INDEX/MATCH against a hidden row-reference column), filtered to
+#   that tab's demonstration type, plus the derived UPL/gap columns IPH does
+#   not carry. That makes IPH redundant for extraction -- everything it has
+#   is already on the matching methodology tab, plus the calculated fields
+#   IPH lacks -- so it is deliberately not mapped here. It would be the right
+#   source for a future UNI (provider universe) check, since it is the one
+#   sheet listing every provider regardless of methodology.
+# - "UPL Demonstration Summary" only aggregates (SUMIF by ownership category
+#   across the four tabs) and is not mapped; the per-provider figures it
+#   sums are already on the methodology tabs.
+# - Real headers sit on row 9 ("Variable Description"), not wherever the
+#   profiler's auto-detection lands -- it picks row 11 on this template (an
+#   instructions row, a false positive) -- so header.rows is pinned
+#   explicitly rather than left to auto-detect.
+# - Data starts at row 12; rows 10-11 are a blank row and an instructions
+#   row, not data. data_rows.start_row is set explicitly for the same reason
+#   the header row is pinned: this template does not put data immediately
+#   below the header.
+# - Ownership is a column (not split across tabs), with real values Private
+#   / NSGO / SGO, confirmed via the workbook's hidden LKUP sheet.
+# - `medicaid_payments_total` is not base + supplemental verbatim -- CMS's
+#   own formula (variable 318) inflates only the base payment before adding
+#   supplemental. ARI005 (SPEC-0004) was fixed to match.
+#
+# Known gaps, not solved here:
+# - No plausibility check exists yet for `payment_to_charge_ratio` (the
+#   Payment tab's analog to the CCR). PLA001 only covers `cost_to_charge_ratio`.
+# - `medicaid_cost` is mapped only on the Cost tab, where CMS's own formula
+#   (variable 400) is literally charges * CCR -- the concept the field
+#   describes. The other three methodologies compute their UPL basis a
+#   different way (PTC, CMI-weighted discharges, per diem * days) with no
+#   equivalent "cost" concept, so it is left unmapped there rather than
+#   forced onto a number that is not a cost.
+
+mapping_version: 1
+
+template:
+  provider_type: inpatient_hospital
+  template_version: "2022"
+  verified_against_real_template: true
+  notes: >-
+    Verified against the real CMS reference copy downloaded 2026-09-17
+    (templates/upl-2022/inpatient-hospital-upl-template-2022.xlsx), not the
+    MACFin-fillable version, which was not obtainable. Structure should
+    match; re-verify with `upl profile` if CMS revises the template.
+
+sheets:
+  - role: demonstration
+    match:
+      name_equals: "IP Cost"
+    key_field: ccn
+    header:
+      rows: [9]
+    data_rows:
+      start_row: 12
+      stop_on_blank_key: true
+    ownership:
+      from: column
+      column: ownership_category
+      values:
+        private: [private]
+        non_state_government: [nsgo]
+        state: [sgo]
+    fields:
+      provider_name:
+        aliases: ["Provider Name"]
+        required: true
+      ccn:
+        aliases: ["Medicare Certification Number (Medicare ID)"]
+        required: true
+      npi:
+        aliases: ["National Provider ID (NPI)"]
+        required: false
+      medicaid_provider_id:
+        aliases: ["State-specific Provider ID (Medicaid ID)"]
+        required: false
+      ownership_category:
+        aliases:
+          - "Ownership Category Type"
+          - "Ownership Category Type (Private, NSGO, SGO)"
+        required: true
+      cost_report_period_start:
+        aliases: ["Medicare Cost Report Begin Date"]
+        required: false
+      cost_report_period_end:
+        aliases: ["Medicare Cost Report End Date"]
+        required: false
+      medicaid_charges:
+        aliases: ["Medicaid Charges"]
+        required: false
+      cost_to_charge_ratio:
+        aliases: ["Medicare Cost-To-Charge Ratio (CCR)"]
+        required: false
+      medicaid_cost:
+        aliases: ["Calculated Medicaid UPL Amount"]
+        required: false
+      upl_trend_factor:
+        aliases: ["UPL Inflation Factor"]
+        required: true
+      upl_amount:
+        aliases: ["Adjusted Medicaid UPL Amount"]
+        required: true
+      medicaid_payments_base:
+        aliases: ["Medicaid Base Payments"]
+        required: true
+      medicaid_trend_factor:
+        aliases: ["MCD Inflation Factor"]
+        required: true
+      medicaid_other_adjustment_factor:
+        aliases: ["Other Adjustment to Medicaid Payments"]
+        required: true
+      medicaid_payments_supplemental:
+        aliases: ["Total Medicaid Supplemental Payments"]
+        required: false
+      medicaid_payments_total:
+        aliases: ["Inflated Medicaid Payments to Demonstration Year"]
+        required: true
+      upl_gap:
+        aliases: ["Adjusted UPL Gap"]
+        required: false
+
+  - role: demonstration
+    match:
+      name_equals: "IP Payment"
+    key_field: ccn
+    header:
+      rows: [9]
+    data_rows:
+      start_row: 12
+      stop_on_blank_key: true
+    ownership:
+      from: column
+      column: ownership_category
+      values:
+        private: [private]
+        non_state_government: [nsgo]
+        state: [sgo]
+    fields:
+      provider_name:
+        aliases: ["Provider Name"]
+        required: true
+      ccn:
+        aliases: ["Medicare Certification Number (Medicare ID)"]
+        required: true
+      npi:
+        aliases: ["National Provider ID (NPI)"]
+        required: false
+      medicaid_provider_id:
+        aliases: ["State-specific Provider ID (Medicaid ID)"]
+        required: false
+      ownership_category:
+        aliases:
+          - "Ownership Category Type"
+          - "Ownership Category Type (Private, NSGO, SGO)"
+        required: true
+      cost_report_period_start:
+        aliases: ["Medicare Cost Report Begin Date"]
+        required: false
+      cost_report_period_end:
+        aliases: ["Medicare Cost Report End Date"]
+        required: false
+      medicaid_charges:
+        aliases: ["Medicaid Charges"]
+        required: false
+      payment_to_charge_ratio:
+        aliases: ["Medicare Payment-To-Charge Ratio (PTC)"]
+        required: false
+      upl_trend_factor:
+        aliases: ["UPL Inflation Factor"]
+        required: true
+      upl_amount:
+        aliases: ["Adjusted Medicaid UPL Amount"]
+        required: true
+      medicaid_payments_base:
+        aliases: ["Medicaid Base Payments"]
+        required: true
+      medicaid_trend_factor:
+        aliases: ["MCD Inflation Factor"]
+        required: true
+      medicaid_other_adjustment_factor:
+        aliases: ["Other Adjustment to Medicaid Payments"]
+        required: true
+      medicaid_payments_supplemental:
+        aliases: ["Total Medicaid Supplemental Payments"]
+        required: false
+      medicaid_payments_total:
+        aliases: ["Inflated Medicaid Payments to Demonstration Year"]
+        required: true
+      upl_gap:
+        aliases: ["Adjusted UPL Gap"]
+        required: false
+
+  - role: demonstration
+    match:
+      name_equals: "IP DRG"
+    key_field: ccn
+    header:
+      rows: [9]
+    data_rows:
+      start_row: 12
+      stop_on_blank_key: true
+    ownership:
+      from: column
+      column: ownership_category
+      values:
+        private: [private]
+        non_state_government: [nsgo]
+        state: [sgo]
+    fields:
+      provider_name:
+        aliases: ["Provider Name"]
+        required: true
+      ccn:
+        aliases: ["Medicare Certification Number (Medicare ID)"]
+        required: true
+      npi:
+        aliases: ["National Provider ID (NPI)"]
+        required: false
+      medicaid_provider_id:
+        aliases: ["State-specific Provider ID (Medicaid ID)"]
+        required: false
+      ownership_category:
+        aliases:
+          - "Ownership Category Type"
+          - "Ownership Category Type (Private, NSGO, SGO)"
+        required: true
+      medicaid_discharges:
+        aliases: ["Medicaid Discharges"]
+        required: false
+      upl_trend_factor:
+        aliases: ["UPL Inflation Factor"]
+        required: true
+      upl_amount:
+        aliases: ["Adjusted Medicaid UPL Amount"]
+        required: true
+      medicaid_payments_base:
+        aliases: ["Medicaid Base Payments"]
+        required: true
+      medicaid_trend_factor:
+        aliases:
+          - "MCD Inflation Factor"
+          - "MCD Inflation Factor (%)"
+        required: true
+      medicaid_other_adjustment_factor:
+        aliases:
+          - "Other Adjustment to Medicaid Payments"
+          - "Other Adjustment to Medicaid Payments (%)"
+        required: true
+      medicaid_payments_supplemental:
+        aliases: ["Total Medicaid Supplemental Payments"]
+        required: false
+      medicaid_payments_total:
+        aliases: ["Inflated Medicaid Payments to Demonstration Year"]
+        required: true
+      upl_gap:
+        aliases: ["Adjusted UPL Gap"]
+        required: false
+
+  - role: demonstration
+    match:
+      name_equals: "IP Per Diem"
+    key_field: ccn
+    header:
+      rows: [9]
+    data_rows:
+      start_row: 12
+      stop_on_blank_key: true
+    ownership:
+      from: column
+      column: ownership_category
+      values:
+        private: [private]
+        non_state_government: [nsgo]
+        state: [sgo]
+    fields:
+      provider_name:
+        aliases: ["Provider Name"]
+        required: true
+      ccn:
+        aliases: ["Medicare Certification Number (Medicare ID)"]
+        required: true
+      npi:
+        aliases: ["National Provider ID (NPI)"]
+        required: false
+      medicaid_provider_id:
+        aliases: ["State-specific Provider ID (Medicaid ID)"]
+        required: false
+      ownership_category:
+        aliases:
+          - "Ownership Category Type"
+          - "Ownership Category Type (Private, NSGO, SGO)"
+        required: true
+      cost_report_period_start:
+        aliases: ["Medicare Cost Report Begin Date"]
+        required: false
+      cost_report_period_end:
+        aliases: ["Medicare Cost Report End Date"]
+        required: false
+      medicaid_days:
+        aliases: ["Medicaid Days"]
+        required: false
+      upl_trend_factor:
+        aliases: ["UPL Inflation Factor"]
+        required: true
+      upl_amount:
+        aliases: ["Adjusted Medicaid UPL Amount"]
+        required: true
+      medicaid_payments_base:
+        aliases: ["Medicaid Base Payments"]
+        required: true
+      medicaid_trend_factor:
+        aliases: ["MCD Inflation Factor"]
+        required: true
+      medicaid_other_adjustment_factor:
+        aliases: ["Other Adjustment to Medicaid Payments"]
+        required: true
+      medicaid_payments_supplemental:
+        aliases: ["Total Medicaid Supplemental Payments"]
+        required: false
+      medicaid_payments_total:
+        aliases: ["Inflated Medicaid Payments to Demonstration Year"]
+        required: true
+      upl_gap:
+        aliases: ["Adjusted UPL Gap"]
+        required: false

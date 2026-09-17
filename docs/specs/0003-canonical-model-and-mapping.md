@@ -61,7 +61,20 @@ revision that adds a column shows up here.
 ### Stage 4 — extract rows
 `upl_helper.extract.extractor.extract(workbook, mapping) -> Extraction`
 
-Walks data rows beneath the header. A row is skipped when:
+`extract_path` opens the workbook with `data_only=True`, unlike the profiler's
+`data_only=False`. Some real templates compute every demonstration cell by
+formula from a separate input sheet, so extraction needs the last-calculated
+value Excel cached at save time, not the formula string. This only matters
+against a real filled workbook; the synthetic fixtures used in tests write
+literal values, so it is invisible against them.
+
+The first data row is `data_rows.start_row` if the mapping sets it, else
+`max(header_rows) + 1`. Most templates need no override — data starts right
+below the header — but some put non-data content (instructions, examples)
+between the two, which `start_row` exists to skip past explicitly rather than
+guess at.
+
+Walks data rows beneath that point. A row is skipped when:
 
 - every mapped cell is empty, or
 - its key field is empty and `stop_on_blank_key` is set (extraction of that
@@ -115,14 +128,24 @@ Grain: **one row per provider per demonstration period.**
 | `medicaid_days` | number | no | |
 | `medicaid_discharges` | number | no | |
 | `medicaid_charges` | money | no | |
-| `cost_to_charge_ratio` | ratio | no | |
-| `trend_factor` | ratio | no | |
+| `cost_to_charge_ratio` | ratio | no | CCR, cost-based methodology |
+| `payment_to_charge_ratio` | ratio | no | PTC, payment-based methodology's analog to the CCR |
 | `medicaid_cost` | money | no | the UPL basis |
+| `upl_trend_factor` | ratio | no | inflates the calculated UPL basis; distinct from `medicaid_trend_factor` |
 | `upl_amount` | money | yes | |
 | `medicaid_payments_base` | money | no | |
+| `medicaid_trend_factor` | ratio | no | inflates base payments only, not supplemental; distinct from `upl_trend_factor` |
+| `medicaid_other_adjustment_factor` | ratio | no | non-inflation adjustment (e.g. volume), applied alongside `medicaid_trend_factor` to base payments only |
 | `medicaid_payments_supplemental` | money | no | |
-| `medicaid_payments_total` | money | yes | |
+| `medicaid_payments_total` | money | yes | not a plain sum where trend/adjustment factors apply — see `ARI005` in SPEC-0004 |
 | `upl_gap` | money | no | `upl_amount - medicaid_payments_total` where present |
+
+`trend_factor` (single, ambiguous) from the original table was split into
+`medicaid_trend_factor` and `upl_trend_factor` on 2026-09-17, once the real
+inpatient hospital template showed CMS tracks two independent inflation
+factors per provider row (variables 308 and 405) — one for the Medicaid
+payment side, one for the UPL side. Nothing consumed the single field before
+the split, so this was a clean rename, not a breaking change.
 
 Run-level, not columns: state, provider type, demonstration year, methodology.
 These live on `ExtractionContext` because they are constant for the run and
@@ -147,6 +170,7 @@ sheets:
     header: {rows: [int]}                  # optional, else detected
     key_field: str
     data_rows:
+      start_row: int                       # optional, else header_rows.max + 1
       stop_on_blank_key: bool
       total_row_markers: [str]             # canonical field names to inspect
       exclude_if_normalized_in: [str]
@@ -203,6 +227,12 @@ unverified mapping producing confident-looking output is worse than no output.
 8. A required sheet rule matching no sheet raises `MappingError`.
 9. `stop_on_blank_key` halts extraction of that sheet at the first row whose
    key field is blank, and rows below it are not extracted.
+9a. `data_rows.start_row`, when set, is used as the first data row instead of
+    `max(header_rows) + 1` — proven against a workbook with a non-data row
+    between the header and the first real row, which the default would
+    otherwise treat as the start of data (and, combined with
+    `stop_on_blank_key`, silently extract zero rows from a workbook that has
+    some).
 10. A row whose marker field normalizes to `total` or `grand total` is excluded
     and counted under `rows_skipped.total_row`.
 11. `"$1,234.56"` coerces to `1234.56`; `"(1,234.56)"` to `-1234.56`;
@@ -237,11 +267,27 @@ unverified mapping producing confident-looking output is worse than no output.
 
 ## Open questions
 
-1. Whether the real template splits ownership categories across separate tabs
-   rather than a column. Both shapes are supported (`ownership.from`), but
-   which one occurs should be recorded after phase 0.
-2. Whether the demonstration tab carries one row per provider or one row per
-   provider-and-cost-report-period. The grain assumed here is the former.
-   **Flag it if the real template says otherwise** — it changes the natural key
-   and therefore every year-over-year check.
-3. Whether `upl_gap` appears in the template at all, or is only in the summary.
+1. ~~Whether the real template splits ownership categories across separate
+   tabs rather than a column. Both shapes are supported (`ownership.from`),
+   but which one occurs should be recorded after phase 0.~~ **Resolved
+   2026-09-17:** ownership is a column (`ownership.from: column` was the
+   right guess), with real values `Private` / `NSGO` / `SGO` (confirmed via
+   the workbook's hidden `LKUP` sheet, not guessed). What the real template
+   *does* split across separate tabs is demonstration methodology, not
+   ownership: `IP Cost`, `IP Payment`, `IP DRG`, `IP Per Diem` each hold the
+   provider rows using that methodology. A mapping needs one `SheetRule` per
+   methodology tab, all `role: demonstration` — the extractor already unions
+   every sheet sharing that role, so this needed no code change.
+2. ~~Whether the demonstration tab carries one row per provider or one row
+   per provider-and-cost-report-period. The grain assumed here is the
+   former. Flag it if the real template says otherwise — it changes the
+   natural key and therefore every year-over-year check.~~ **Resolved
+   2026-09-17:** one row per provider, confirmed. A provider appears on
+   exactly one of the four methodology tabs (whichever it uses for the
+   demonstration year), so within one run's scope (one state, one provider
+   type, one demonstration year, per ADR-0001) the assumed grain holds.
+3. ~~Whether `upl_gap` appears in the template at all, or is only in the
+   summary.~~ **Resolved 2026-09-17:** it appears at the provider-row level
+   on each methodology tab, as "Adjusted UPL Gap" (CMS variable 409). The
+   `UPL Demonstration Summary` tab only aggregates it (`SUMIF` by ownership
+   category across the four tabs) — it is not the sole source.

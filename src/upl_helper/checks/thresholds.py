@@ -23,9 +23,10 @@ class Thresholds:
     money_abs_tol: float = 0.01
     ratio_abs_tol: float = 0.0005
 
-    # Guessed. Real state data should set these. See SPEC-0004 open question 1.
+    # ccr_min is still a guess (see SPEC-0004 open question 1). ccr_max is set
+    # from Lauren's domain knowledge of real state data, 2026-09-17.
     ccr_min: float = 0.05
-    ccr_max: float = 1.20
+    ccr_max: float = 3.00
 
     # Modified z-score above which a per-unit value is called an outlier.
     outlier_mad_threshold: float = 3.5

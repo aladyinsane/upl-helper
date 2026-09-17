@@ -258,7 +258,7 @@ def test_shipped_example_waivers_load() -> None:
 
 def test_thresholds_load_from_yaml() -> None:
     """AC-21."""
-    assert load_thresholds("config/thresholds/default.yaml").ccr_max == 1.20
+    assert load_thresholds("config/thresholds/default.yaml").ccr_max == 3.00
 
 
 def test_unknown_threshold_is_rejected(tmp_path: Path) -> None:

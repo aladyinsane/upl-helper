@@ -109,6 +109,32 @@ def test_shipped_provisional_mapping_is_valid() -> None:
     )
 
 
+REAL_INPATIENT_TEMPLATE = "templates/upl-2022/inpatient-hospital-upl-template-2022.xlsx"
+
+
+def test_verified_inpatient_mapping_is_marked_verified() -> None:
+    mapping = load_mapping("config/templates/inpatient-hospital-2022.yaml")
+    assert mapping.template.verified_against_real_template is True
+
+
+def test_verified_inpatient_mapping_resolves_against_the_real_template() -> None:
+    """Ties the mapping to the actual committed CMS workbook, not a guess.
+
+    The real template is blank (no filled provider rows), so this only
+    proves every required field resolves to exactly one column on each of
+    the four methodology tabs -- it cannot prove the values come out right.
+    """
+    from upl_helper.extract.extractor import extract_path
+
+    mapping = load_mapping("config/templates/inpatient-hospital-2022.yaml")
+    extraction = extract_path(REAL_INPATIENT_TEMPLATE, mapping)
+    matched = {m["sheet"] for m in extraction.report.sheets_matched}
+    assert matched == {"IP Cost", "IP Payment", "IP DRG", "IP Per Diem"}
+    assert not extraction.report.rules_unmatched
+    for sheet, missing in extraction.report.fields_missing.items():
+        assert missing == [], f"{sheet}: required-adjacent fields unresolved: {missing}"
+
+
 def test_missing_file_is_reported(tmp_path: Path) -> None:
     with pytest.raises(MappingError):
         load_mapping(tmp_path / "nope.yaml")

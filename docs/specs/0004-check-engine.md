@@ -91,7 +91,7 @@ Tolerance for all money comparisons: `abs_tol` from thresholds, default `0.01`.
 | id | severity | checks |
 |---|---|---|
 | `ARI004` | ERROR | `upl_gap == upl_amount - medicaid_payments_total` |
-| `ARI005` | ERROR | `medicaid_payments_total == base + supplemental` |
+| `ARI005` | ERROR | `medicaid_payments_total == supplemental + (base * medicaid_trend_factor * medicaid_other_adjustment_factor)` |
 | `ARI006` | WARN | `medicaid_cost == medicaid_charges * cost_to_charge_ratio` |
 
 Each skips a row where any input is null, and reports how many rows it could
@@ -192,7 +192,10 @@ upl check WORKBOOK -m MAPPING [--state XX] [--year YYYY]
    more than the tolerance, and passes one that agrees within it.
 3. `ARI004` does not evaluate rows where either input is null, and reports the
    count under `rows_not_evaluated`.
-4. `ARI005` flags base + supplemental not summing to total.
+4. `ARI005` flags inflated base + supplemental not summing to total; the
+   trend and adjustment factors default to `1.0` (CMS's own "no change"
+   convention) when a mapping does not supply them, which collapses the
+   check to a plain footing sum.
 5. `PLA005` flags a negative `medicaid_days` and a negative `upl_amount`.
 6. `PLA008` flags a provider whose payments exceed its UPL, at `WARN`.
 7. `POL002` flags an ownership category whose aggregate payments exceed its
@@ -232,8 +235,10 @@ upl check WORKBOOK -m MAPPING [--state XX] [--year YYYY]
 
 ## Open questions
 
-1. The CCR plausible range is guessed (`0.05`–`1.20`). Real state data should
-   set it.
+1. ~~The CCR plausible range is guessed (`0.05`–`1.20`). Real state data should
+   set it.~~ **Resolved 2026-09-17:** `ccr_min` (`0.05`) is still a guess.
+   `ccr_max` is raised to `3.00` on Lauren's domain knowledge of real state
+   data — `1.20` was too tight.
 2. Whether `POL002` should test each ownership category separately or also in
    total depends on how the state's SPA words it. Category-level is the
    conservative reading.
