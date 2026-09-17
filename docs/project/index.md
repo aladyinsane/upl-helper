@@ -2,6 +2,19 @@
 
 Newest first.
 
+## 2026-09-17 — ADR-0001 accepted, SPEC-0002 written
+
+- Phase 0 reviewed and approved. ADR-0001 status flipped to **Accepted**.
+- SPEC-0002 written: template profiler and unprotect utility.
+- Python project scaffolding: `pyproject.toml`, `src/` layout, a CLI with
+  decorator-based subcommand registration, ruff + pytest config, GitHub
+  Actions CI on 3.11 and 3.12.
+- Key design point in SPEC-0002: the descriptor carries no cell values except
+  header text and formula strings, and that rule is enforced by a canary test
+  rather than by convention, because descriptors get committed publicly while
+  the workbooks they describe contain real payment data.
+- Next: implement SPEC-0002.
+
 ## 2026-09-17 — ADR-0001 revised after review
 
 - Review point: the no-network constraint is specific to the Claude Code web
