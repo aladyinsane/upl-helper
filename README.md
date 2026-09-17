@@ -20,8 +20,21 @@ processes produce the numbers. This project checks them before they go to CMS:
 
 ## Status
 
-Early. Nothing is implemented yet. See `docs/adr/` for decisions and
-`docs/project/index.md` for current state.
+Early but runnable. See `docs/adr/` for decisions, `docs/specs/` for what each
+piece does, and `docs/project/index.md` for current state.
+
+```
+upl profile   WORKBOOK                  describe a template's structure, no cell data
+upl unprotect WORKBOOK                  write an unprotected working copy
+upl extract   WORKBOOK -m MAPPING       read it into the canonical model
+upl check     WORKBOOK -m MAPPING       run the check suite
+```
+
+**The shipped inpatient mapping and the CCN reference tables are unverified.**
+They were written without access to a real CMS template or to any CMS data
+source. Phase 0 of ADR-0001 replaces them; until then `upl extract` and
+`upl check` say so on every run, and the checks that depend on the unverified
+tables refuse to run rather than invent findings.
 
 ## Workflow
 

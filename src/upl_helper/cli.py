@@ -62,6 +62,7 @@ def _load_commands() -> None:
     Each module calls ``register_command`` at import time. Modules are added
     here as they are implemented.
     """
+    from upl_helper import checks as _checks  # noqa: F401
     from upl_helper import extract as _extract  # noqa: F401
     from upl_helper import profile as _profile  # noqa: F401
     from upl_helper import unprotect as _unprotect  # noqa: F401

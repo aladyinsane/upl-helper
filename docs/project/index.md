@@ -2,6 +2,23 @@
 
 Newest first.
 
+## 2026-09-17 — SPEC-0004 written and implemented
+
+- Check engine, findings, waivers, thresholds, reporting, and 13 checks across
+  ARI, PLA, IDN and POL. 159 tests passing.
+- Findings are data with stable fingerprints. The fingerprint deliberately
+  excludes the observed value, so a waiver survives next year's number moving.
+- Waivers require a reason and an expiry, both enforced at load. An expired
+  waiver does not suppress; it surfaces the finding plus a note that it lapsed.
+- Checks that cannot run report SKIPPED with a reason. They never pass quietly.
+- IDN002/IDN003 depend on CCN reference tables written from memory. Those ship
+  marked unverified and the checks **do not run** until someone confirms them.
+- POL002 is the real legal test and is aggregate by ownership category; PLA008
+  is the per-provider warning. Tested that one provider over its own UPL does
+  not trip the aggregate check.
+- Next: STR checks against a profiler descriptor, then the fixture generator,
+  then phase 0 output lands and the provisional mapping gets replaced.
+
 ## 2026-09-17 — SPEC-0003 written and implemented
 
 - Canonical model, template mapping format, and extractor. 109 tests passing.

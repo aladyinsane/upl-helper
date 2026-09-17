@@ -78,3 +78,54 @@ def test_extract_warns_when_the_mapping_is_unverified(
     assert "not verified against a real CMS template" in captured
     assert out.exists()
     assert "014001" in out.read_text()
+
+
+def test_check_reports_findings_and_exits_nonzero_on_errors(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """SPEC-0004 AC-20, end to end."""
+    from tests.builders import UPL_HEADERS, upl_workbook
+
+    # Private Regional's payments exceed its UPL, and it is the only private
+    # provider, so the category aggregate is over too.
+    book = upl_workbook(tmp_path / "wb.xlsx", headers=UPL_HEADERS)
+    exit_code = cli.main(
+        [
+            "check",
+            str(book),
+            "-m",
+            "config/templates/inpatient-hospital-provisional.yaml",
+            "--state",
+            "IL",
+            "--year",
+            "2024",
+        ]
+    )
+    out = capsys.readouterr().out
+    assert exit_code == 1
+    assert "ERROR POL002" in out
+    assert "WARN  PLA008" in out
+    assert "not verified against a real CMS template" in out
+
+
+def test_check_writes_json(tmp_path: Path) -> None:
+    import json
+
+    from tests.builders import upl_workbook
+
+    book = upl_workbook(tmp_path / "wb.xlsx")
+    out = tmp_path / "findings.json"
+    cli.main(
+        [
+            "check",
+            str(book),
+            "-m",
+            "config/templates/inpatient-hospital-provisional.yaml",
+            "--format",
+            "json",
+            "-o",
+            str(out),
+        ]
+    )
+    payload = json.loads(out.read_text())
+    assert {f["check_id"] for f in payload["findings"]} >= {"POL002", "PLA008"}

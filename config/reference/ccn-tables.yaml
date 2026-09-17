@@ -1,0 +1,87 @@
+# CCN reference tables - NOT VERIFIED
+#
+# These were written from memory, without access to any CMS source, in an
+# environment that cannot reach cms.gov. They are very likely to contain
+# errors.
+#
+# While `verified: false`, the checks that depend on these tables (IDN002,
+# IDN003) DO NOT RUN. They report SKIPPED with this reason. A check that
+# invents findings from a table nobody has checked is worse than no check.
+#
+# To verify:
+#   - SSA state codes: CMS State Operations Manual, or the Provider of
+#     Services file, whose CCN prefixes can be cross-tabulated against its
+#     own state field. Note these are SSA codes, NOT FIPS codes.
+#   - Facility type ranges: State Operations Manual Chapter 2, or derive them
+#     from the POS file by cross-tabulating CCN positions 3-6 against
+#     provider category.
+# Then set verified: true.
+
+verified: false
+
+# Two-character CCN prefix -> USPS state code.
+ssa_state_codes:
+  "01": AL
+  "02": AK
+  "03": AZ
+  "04": AR
+  "05": CA
+  "06": CO
+  "07": CT
+  "08": DE
+  "09": DC
+  "10": FL
+  "11": GA
+  "12": HI
+  "13": ID
+  "14": IL
+  "15": IN
+  "16": IA
+  "17": KS
+  "18": KY
+  "19": LA
+  "20": ME
+  "21": MD
+  "22": MA
+  "23": MI
+  "24": MN
+  "25": MS
+  "26": MO
+  "27": MT
+  "28": NE
+  "29": NV
+  "30": NH
+  "31": NJ
+  "32": NM
+  "33": NY
+  "34": NC
+  "35": ND
+  "36": OH
+  "37": OK
+  "38": OR
+  "39": PA
+  "40": PR
+  "41": RI
+  "42": SC
+  "43": SD
+  "44": TN
+  "45": TX
+  "46": UT
+  "47": VT
+  "48": VA
+  "49": WA
+  "50": WV
+  "51": WI
+  "52": WY
+
+# Provider type -> the CCN sequence ranges (positions 3-6) expected for it.
+facility_type_ranges:
+  inpatient_hospital:
+    - [1, 879]      # short-term general and specialty
+    - [1300, 1399]  # critical access
+    - [2000, 2299]  # long-term care hospital
+    - [3025, 3099]  # rehabilitation
+    - [3300, 3399]  # children's
+    - [4000, 4499]  # psychiatric
+  nursing_facility:
+    - [5000, 6499]  # skilled nursing
