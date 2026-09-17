@@ -2,6 +2,38 @@
 
 Newest first.
 
+## 2026-09-17 — ADR-0001 revised after review
+
+- Review point: the no-network constraint is specific to the Claude Code web
+  environment, not to development generally. Other environments can reach CMS.
+- Reworked the ADR's context around an environment matrix instead of a single
+  blocked environment. Acquisition and checking are now explicitly separable —
+  acquisition may need network and may happen elsewhere; checking never does.
+- Added **phase 0, acquisition reconnaissance**, ahead of everything: from a
+  networked environment, download the blank inpatient template, and confirm
+  the real schemas of the candidate reference datasets. The reference source
+  inventory was written blind and is the largest design risk in the ADR.
+- Separated justifications that were leaning on the constraint from ones that
+  stand on their own. Offline checking and header-based column mapping are
+  right regardless of network; only "the profiler is the only way to see the
+  template" was constraint-dependent, and the profiler has two other reasons
+  to exist.
+- Commit policy clarified: blank official CMS templates can be committed
+  outright; filled workbooks never leave their environment, descriptor only.
+
+## 2026-09-17 — ADR-0001 drafted
+
+- Scope decided: input is the completed CMS workbook; inpatient hospital
+  first; Python with pandas/openpyxl; work environment can reach CMS for
+  reference data pulls.
+- ADR-0001 proposed — five-layer architecture, checks bound to a canonical
+  model rather than cell addresses, template layout supplied as YAML data,
+  findings as data with waivers, dated reference data snapshots, synthetic
+  fixtures with injected defects for testing.
+- Scope closed out: one state per run; supplemental payment checks in scope
+  as a separate opt-in `SUP` family, off by default.
+- Next: ADR review. Then SPEC-0002 for the profiler and canonical model.
+
 ## 2026-09-17 — project start
 
 - Repo initialized. `main` created with workflow scaffolding, ADR and spec
@@ -13,9 +45,5 @@ Newest first.
   open scoping questions.
 
 ### Open questions
-- Which provider type / template is first?
-- Does the tool read the finished CMS Excel workbook, the upstream data that
-  feeds it, or both?
-- Implementation language and what can be installed in the work environment.
-- Does the work environment have internet access for reference data pulls?
-- Single state or multi-state.
+- None blocking. The `SUP` input format is unknown and gets resolved when its
+  spec is written.
