@@ -1,0 +1,30 @@
+# Example waiver file. Copy it, do not use it as is.
+#
+# A waiver suppresses one known-acceptable finding. Both fields below are
+# required:
+#
+#   reason   - why this is acceptable, in enough detail that someone else can
+#              judge it next year. A waiver with no reason is a silent
+#              suppression, so the loader rejects it.
+#   expires  - when the question comes back. A waiver file is where real
+#              problems go to be forgotten; the date is what stops that. An
+#              expired waiver does not suppress; it surfaces the finding again
+#              along with a note saying the waiver lapsed.
+#
+# Match either by fingerprint (printed with each finding in JSON output) or by
+# check_id plus an optional subject.
+
+waivers:
+  - check_id: PLA001
+    subject: "140001"
+    reason: >-
+      Specialty children's hospital; its CCR is genuinely above the general
+      acute range. Confirmed against the FY2023 cost report and accepted by CMS
+      in the SFY2023 demonstration.
+    expires: 2027-06-30
+
+  - fingerprint: "0000000000000000"
+    reason: >-
+      Placeholder showing fingerprint matching. Replace with a real one from
+      the JSON report.
+    expires: 2027-06-30

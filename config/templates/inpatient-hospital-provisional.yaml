@@ -1,0 +1,177 @@
+# PROVISIONAL MAPPING - NOT VERIFIED AGAINST A REAL CMS TEMPLATE
+#
+# This file was written without access to the CMS inpatient hospital UPL
+# template. Sheet names, header strings and aliases below are plausible
+# guesses, not observed facts. Phase 0 of ADR-0001 replaces them.
+#
+# To correct it:
+#   1. upl profile <real template.xlsx> -o templates/inpatient/descriptor.yaml
+#   2. Read the descriptor's header_text and header_normalized values.
+#   3. Fix the sheet `match` rules and the `aliases` lists below to match.
+#   4. Set verified_against_real_template: true.
+#
+# Until step 4, treat any extraction using this mapping as a smoke test of the
+# machinery, not as a real reading of a demonstration.
+
+mapping_version: 1
+
+template:
+  provider_type: inpatient_hospital
+  template_version: "provisional"
+  verified_against_real_template: false
+  notes: >-
+    Guessed structure. Assumes one demonstration tab with an ownership column.
+    The real template may instead split ownership across tabs, in which case
+    switch the sheet rules to ownership.from: constant.
+
+sheets:
+  - role: demonstration
+    required: true
+    match:
+      name_matches: "(?i)demonstration|cost based|payment based|upl"
+    key_field: ccn
+    data_rows:
+      stop_on_blank_key: false
+      total_row_markers: [provider_name]
+      exclude_if_normalized_in:
+        - total
+        - totals
+        - grand total
+        - subtotal
+        - sum
+    ownership:
+      from: column
+      column: ownership_category
+      values:
+        state:
+          - state
+          - state government
+          - state owned
+          - state government owned
+        non_state_government:
+          - non-state
+          - non state
+          - non-state government
+          - non-state government owned
+          - county
+          - city
+          - hospital district
+          - local government
+        private:
+          - private
+          - privately owned
+          - non-government
+          - investor owned
+          - voluntary non-profit
+    fields:
+      provider_name:
+        aliases:
+          - provider name
+          - facility name
+          - hospital name
+          - provider
+        required: true
+      ccn:
+        aliases:
+          - medicare provider number (ccn)
+          - medicare provider number
+          - medicare id
+          - ccn
+          - provider number
+        required: true
+      npi:
+        aliases:
+          - npi
+          - national provider identifier
+        required: false
+      medicaid_provider_id:
+        aliases:
+          - medicaid provider number
+          - medicaid provider id
+          - medicaid id
+        required: false
+      ownership_category:
+        aliases:
+          - ownership
+          - ownership category
+          - ownership type
+          - facility ownership
+        required: true
+      cost_report_period_start:
+        aliases:
+          - cost report period begin
+          - cost report begin date
+          - cost reporting period from
+        required: false
+      cost_report_period_end:
+        aliases:
+          - cost report period end
+          - cost report end date
+          - cost reporting period to
+        required: false
+      medicaid_days:
+        aliases:
+          - medicaid days
+          - total medicaid days
+          - medicaid inpatient days
+        required: false
+      medicaid_discharges:
+        aliases:
+          - medicaid discharges
+          - total medicaid discharges
+        required: false
+      medicaid_charges:
+        aliases:
+          - medicaid charges
+          - total medicaid charges
+          - medicaid covered charges
+        required: false
+      cost_to_charge_ratio:
+        aliases:
+          - cost to charge ratio
+          - ccr
+          - cost-to-charge ratio
+        required: false
+      trend_factor:
+        aliases:
+          - trend factor
+          - inflation factor
+          - update factor
+        required: false
+      medicaid_cost:
+        aliases:
+          - medicaid cost
+          - total medicaid cost
+          - medicaid inpatient cost
+        required: false
+      upl_amount:
+        aliases:
+          - upl
+          - upl amount
+          - medicare upper payment limit
+          - upper payment limit
+        required: true
+      medicaid_payments_base:
+        aliases:
+          - base payments
+          - medicaid base payments
+          - ffs payments
+        required: false
+      medicaid_payments_supplemental:
+        aliases:
+          - supplemental payments
+          - medicaid supplemental payments
+        required: false
+      medicaid_payments_total:
+        aliases:
+          - total medicaid payments
+          - total payments
+          - medicaid payments
+        required: true
+      upl_gap:
+        aliases:
+          - upl gap
+          - gap
+          - difference
+          - upl variance
+        required: false
