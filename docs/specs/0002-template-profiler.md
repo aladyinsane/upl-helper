@@ -277,14 +277,48 @@ Neither command ever writes to its input.
 
 ## Open questions
 
-1. CMS templates may use defined names for the demonstration data ranges. If
+1. ~~CMS templates may use defined names for the demonstration data ranges. If
    they do, defined names are a more stable anchor than header text and the
-   mapping format in SPEC-0003 should prefer them. **Flag what you find in the
-   real descriptor; do not design for it speculatively.**
-2. Whether the inpatient template's demonstration tab has a single header row
-   or a two-row header is unknown until phase 0. Both are handled; which one
-   occurs should be recorded.
-3. Very large workbooks — if a state's template runs to tens of thousands of
-   rows, per-cell iteration may be slow enough to need `read_only=True`, which
-   costs access to some structure. Do not optimize for this until a real file
-   proves it necessary.
+   mapping format in SPEC-0003 should prefer them. Flag what you find in the
+   real descriptor; do not design for it speculatively.~~ **Resolved
+   2026-09-17:** the real inpatient hospital template has 18 defined names
+   (`_OwnershipType`, `_DemoType`, `Cost_Count`, `DV_Rule_1`, etc.), all
+   pointing at dropdown validation lists and row-count controls on the
+   hidden `LKUP`/`_Controls` sheets. None anchor the demonstration data range
+   itself — there is no defined name for "the provider rows on IP Cost."
+   Header-text matching stays the only viable anchor for locating data; there
+   is nothing more stable to prefer.
+2. ~~Whether the inpatient template's demonstration tab has a single header
+   row or a two-row header is unknown until phase 0. Both are handled; which
+   one occurs should be recorded.~~ **Resolved 2026-09-17:** neither, cleanly
+   — each of the four methodology tabs (`IP Cost`, `IP Payment`, `IP DRG`,
+   `IP Per Diem`) carries three superimposed header-like row bands: row 6 is
+   a single row of rich, multi-line cells combining a category label,
+   requirement tag, field name and CMS variable number in one string per
+   cell (e.g. `"Provider Info: (Required) Provider Name [108]"`); rows 8–9
+   are a genuine two-row block (variable number, then a clean one-line
+   variable description — e.g. `"Provider Name"`); row 11 is an unrelated
+   single row of data-entry instructions (e.g. `"Obtain from Medicare Cost
+   Reports"`) that superficially resembles a header. Rows 8–9's description
+   row (row 9 alone, once joined) is the one a mapping should target — it is
+   the only clean, unambiguous field name. The header-detection heuristic
+   currently picks row 11 by default (a real false positive: instructions
+   score as highly as a header because they are fully populated, similarly
+   shaped text), so a real mapping for this template must pin
+   `header.rows` explicitly rather than rely on auto-detection.
+3. ~~Very large workbooks — if a state's template runs to tens of thousands of
+   rows, per-cell iteration may be slow enough to need `read_only=True`,
+   which costs access to some structure. Do not optimize for this until a
+   real file proves it necessary.~~ **Resolved 2026-09-17:** measured against
+   the real inpatient hospital template (15 MB, 26 sheets, ~5,000 data rows,
+   workbook-protected) — `read_only=False` (what the profiler uses) takes
+   about 8 seconds to load; `read_only=True` loads near-instantly (~0.03s)
+   but its `ReadOnlyWorksheet` has no `merged_cells`, `data_validations`, or
+   `protection` attributes at all (`AttributeError`, not empty values) —
+   confirmed directly against openpyxl, not from documentation. Since the
+   descriptor's schema requires exactly those three (`merged_ranges`,
+   `data_validations`, `conditional_formatting_ranges`, `protection`),
+   `read_only=True` cannot produce a complete descriptor as currently
+   specified; that is the concrete cost the original question anticipated.
+   8 seconds on a real, sizeable template is not yet a problem worth trading
+   that structural fidelity away for, so this stays unoptimized.
