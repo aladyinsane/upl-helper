@@ -1,6 +1,6 @@
 """Tests for the CLI scaffolding itself.
 
-Command behaviour is tested alongside each command; this only covers the
+Command behavior is tested alongside each command; this only covers the
 registration mechanism and the bare entry point.
 """
 

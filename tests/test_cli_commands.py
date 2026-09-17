@@ -1,4 +1,4 @@
-"""End-to-end CLI behaviour for `upl profile` and `upl unprotect`."""
+"""End-to-end CLI behavior for `upl profile` and `upl unprotect`."""
 
 from __future__ import annotations
 

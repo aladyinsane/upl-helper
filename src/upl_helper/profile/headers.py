@@ -206,15 +206,15 @@ def select_header_rows(
     best = candidates[0]
     by_row = {c.row: c for c in candidates}
     rows = {best.row}
-    for neighbour in (best.row - 1, best.row + 1):
-        candidate = by_row.get(neighbour)
+    for neighbor in (best.row - 1, best.row + 1):
+        candidate = by_row.get(neighbor)
         if candidate is None:
             continue
         if candidate.score < multi_row_threshold * best.score:
             continue
-        if is_data_row is not None and is_data_row(neighbour):
+        if is_data_row is not None and is_data_row(neighbor):
             continue
-        rows.add(neighbour)
+        rows.add(neighbor)
     return sorted(rows)
 
 
