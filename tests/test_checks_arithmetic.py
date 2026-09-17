@@ -86,7 +86,7 @@ def test_ari005_flags_a_total_that_ignores_the_trend_factor() -> None:
 
 def test_ari005_treats_missing_factors_as_no_change() -> None:
     """A mapping that never supplies the factor fields gets the pre-fix
-    behaviour: total == base + supplemental, unscaled."""
+    behavior: total == base + supplemental, unscaled."""
     ctx = make_context(
         [provider(medicaid_trend_factor=None, medicaid_other_adjustment_factor=None)]
     )
