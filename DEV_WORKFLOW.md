@@ -47,6 +47,9 @@ what is next. Terse bullets, not prose.
 - `feat/NNNN-short-title` — implementation of spec NNNN
 - `fix/short-title` — bug fix
 
+Claude Code web sessions are assigned a `claude/<topic>` branch by the
+harness and push to that instead. Same loop, different branch name.
+
 ## Commits
 
 Present tense, say what the change does and why if it is not obvious.
