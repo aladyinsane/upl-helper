@@ -21,7 +21,9 @@ processes produce the numbers. This project checks them before they go to CMS:
 ## Status
 
 Early but runnable. See `docs/adr/` for decisions, `docs/specs/` for what each
-piece does, and `docs/project/index.md` for current state.
+piece does, and `docs/project/index.md` for current state. Continuing
+development elsewhere, especially with a different agent? Start at
+`HANDOFF.md`.
 
 ```
 upl profile   WORKBOOK                  describe a template's structure, no cell data
@@ -30,11 +32,15 @@ upl extract   WORKBOOK -m MAPPING       read it into the canonical model
 upl check     WORKBOOK -m MAPPING       run the check suite
 ```
 
-**The shipped inpatient mapping and the CCN reference tables are unverified.**
-They were written without access to a real CMS template or to any CMS data
-source. Phase 0 of ADR-0001 replaces them; until then `upl extract` and
-`upl check` say so on every run, and the checks that depend on the unverified
-tables refuse to run rather than invent findings.
+See `docs/USAGE.md` for setup and real command examples.
+
+**Inpatient hospital has a real, verified mapping**
+(`config/templates/inpatient-hospital-2022.yaml`), checked against the actual
+CMS template. The other seven provider types have templates downloaded
+(`templates/upl-2022/`) but no mapping yet. **The CCN reference tables**
+(`config/reference/ccn-tables.yaml`) are still unverified — written without
+access to any CMS data source — so `IDN002`/`IDN003` refuse to run rather
+than invent findings until someone confirms them against a real source.
 
 ## Workflow
 
