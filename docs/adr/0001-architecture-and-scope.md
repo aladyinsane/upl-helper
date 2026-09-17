@@ -164,7 +164,7 @@ cell it concerns, observed vs expected, and evidence — not printed text.
 
 Findings get a deterministic fingerprint from the check ID plus the subject
 key, which makes a `waivers.yaml` possible: a known-acceptable finding can be
-suppressed with a written reason and an expiry date. Without waivers a check
+suppressed with a written reason and an expiration date. Without waivers a check
 suite that emits four hundred rows gets ignored after the first run.
 
 A check whose reference data is unavailable reports `SKIPPED` with the reason.
@@ -337,7 +337,7 @@ that is convenient. Phase 4 is the only one that is genuinely blocked on it.
 - Phase 0 has no automated test and produces documentation rather than code,
   which makes it the phase most likely to be skipped or done halfway. Its
   output is committed evidence for exactly that reason.
-- A waiver file is a place for real problems to go and be forgotten. Expiry
+- A waiver file is a place for real problems to go and be forgotten. Expiration
   dates are mandatory for that reason.
 
 **Multiple environments cost us:**

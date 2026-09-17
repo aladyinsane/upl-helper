@@ -224,7 +224,7 @@ def test_waiver_with_a_blank_reason_is_rejected(tmp_path: Path) -> None:
         )
 
 
-def test_waiver_without_an_expiry_is_rejected(tmp_path: Path) -> None:
+def test_waiver_without_an_expiration_is_rejected(tmp_path: Path) -> None:
     """AC-17."""
     with pytest.raises(WaiverError) as excinfo:
         load_waivers(_write(tmp_path, [{"check_id": "X001", "reason": "ok"}]))

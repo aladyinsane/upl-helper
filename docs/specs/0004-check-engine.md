@@ -220,7 +220,7 @@ upl check WORKBOOK -m MAPPING [--state XX] [--year YYYY]
 19. A waiver by `check_id` + `subject` matches without a fingerprint.
 20. `upl check` exits 1 when there is an unwaived `ERROR` and 0 otherwise; a
     waived `ERROR` does not cause exit 1.
-21. Thresholds load from YAML and change behaviour: widening `ccr_max` silences
+21. Thresholds load from YAML and change behavior: widening `ccr_max` silences
     a `PLA001` finding.
 22. JSON output round-trips every finding with its fingerprint.
 23. A check needing a field that the workbook did not supply reports `SKIPPED`

@@ -78,7 +78,7 @@ Newest first.
   ARI, PLA, IDN and POL. 159 tests passing.
 - Findings are data with stable fingerprints. The fingerprint deliberately
   excludes the observed value, so a waiver survives next year's number moving.
-- Waivers require a reason and an expiry, both enforced at load. An expired
+- Waivers require a reason and an expiration, both enforced at load. An expired
   waiver does not suppress; it surfaces the finding plus a note that it lapsed.
 - Checks that cannot run report SKIPPED with a reason. They never pass quietly.
 - IDN002/IDN003 depend on CCN reference tables written from memory. Those ship
