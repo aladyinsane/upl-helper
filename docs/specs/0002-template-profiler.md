@@ -80,7 +80,11 @@ the `multi_row_threshold` on **adjacent** rows; the column's header text is
 then the non-empty parts joined top to bottom with `" / "`.
 
 ### Stage 3 — column profiling
-`upl_helper.profile.columns.profile_column(worksheet, col_idx, header_rows) -> ColumnProfile`
+`upl_helper.profile.columns.profile_columns(worksheet, header_rows) -> list[ColumnProfile]`
+
+The entry point is plural because columns are profiled in **one pass** over the
+sheet. A per-column signature reads better but makes the work quadratic in
+column count, and a real UPL template is wide.
 
 Per column: letter, 1-based index, hidden flag, width, header text and its
 normalized form, the dominant number format, counts of cell types below the

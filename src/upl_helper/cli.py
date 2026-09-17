@@ -11,6 +11,7 @@ import sys
 from collections.abc import Callable, Sequence
 
 from upl_helper import __version__
+from upl_helper.errors import UplHelperError
 
 # Populated by register_command(). Maps command name -> (help text, adder).
 _COMMANDS: dict[str, tuple[str, Callable[[argparse.ArgumentParser], None]]] = {}
@@ -61,7 +62,8 @@ def _load_commands() -> None:
     Each module calls ``register_command`` at import time. Modules are added
     here as they are implemented.
     """
-    # Nothing registered yet. SPEC-0002 adds `profile` and `unprotect`.
+    from upl_helper import profile as _profile  # noqa: F401
+    from upl_helper import unprotect as _unprotect  # noqa: F401
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -73,7 +75,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.print_help()
         return 1
 
-    return args.func(args)
+    try:
+        return args.func(args)
+    except UplHelperError as exc:
+        # Deliberate errors report their message; anything else is a bug and
+        # keeps its traceback.
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

@@ -2,6 +2,20 @@
 
 Newest first.
 
+## 2026-09-17 — SPEC-0002 implemented
+
+- `upl profile` and `upl unprotect` implemented, 72 tests passing.
+- Every acceptance criterion in SPEC-0002 has a test. The redaction rule
+  (AC-13, AC-14) is covered by canary tests in both output formats and both
+  strict modes.
+- One spec amendment: stage 3's entry point is `profile_columns` (plural,
+  single pass) rather than per-column, which would have been quadratic in
+  column count.
+- Verified end to end: a 40-row column of formulas containing one hardcoded
+  constant profiles as `formula: 39, numeric: 1` with a single formula
+  pattern — the signal `STR003` will key on.
+- Next: SPEC-0003, canonical model and template mapping.
+
 ## 2026-09-17 — ADR-0001 accepted, SPEC-0002 written
 
 - Phase 0 reviewed and approved. ADR-0001 status flipped to **Accepted**.
