@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+.coverage
+htmlcov/
+
+# Reference data caches (large, regenerable, never committed)
+data/cache/
+data/refdata/
+*.parquet
+*.sqlite
+*.db
+
+# Real state submissions and anything derived from them.
+# Only synthetic fixtures belong in this repo.
+data/real/
+data/incoming/
+*.xlsx
+*.xlsm
+*.xlsb
+!tests/fixtures/**/*.xlsx
+!tests/fixtures/**/*.xlsm
+
+# Local editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
