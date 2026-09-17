@@ -10,7 +10,7 @@ Python 3.11+.
 
 ```bash
 python -m venv .venv
-source .venv/Scripts/activate   # Windows: .venv\Scripts\activate
+.venv\Scripts\activate    # if not Windows: source .venv/Scripts/activate
 pip install -e ".[dev]"
 ```
 
