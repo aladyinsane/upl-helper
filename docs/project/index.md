@@ -11,8 +11,8 @@ Newest first.
   model rather than cell addresses, template layout supplied as YAML data,
   findings as data with waivers, dated reference data snapshots, synthetic
   fixtures with injected defects for testing.
-- Open questions from project start are resolved except: single vs
-  multi-state, and whether supplemental payment allocation logic is in scope.
+- Scope closed out: one state per run; supplemental payment checks in scope
+  as a separate opt-in `SUP` family, off by default.
 - Next: ADR review. Then SPEC-0002 for the profiler and canonical model.
 
 ## 2026-09-17 — project start
@@ -26,5 +26,5 @@ Newest first.
   open scoping questions.
 
 ### Open questions
-- Single state or multi-state.
-- Is checking the supplemental payment allocation in scope, or only the UPL?
+- None blocking. The `SUP` input format is unknown and gets resolved when its
+  spec is written.

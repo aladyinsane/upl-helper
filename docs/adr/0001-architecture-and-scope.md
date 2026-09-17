@@ -45,6 +45,9 @@ Scope for the first pass, decided with Lauren:
 - Python with pandas and openpyxl. Normal `pip install` is available.
 - The work environment can reach CMS sites, so reference data can be fetched
   there even though it cannot be fetched here.
+- One state per run. Multi-state is running the tool more than once.
+- Checking the supplemental payment calculation is in scope, but as a
+  separate opt-in family rather than part of the default run.
 
 ## Decision
 
@@ -89,7 +92,40 @@ This is the load-bearing decision. It means a template revision, a second
 provider type, or eventually an upstream data source can all feed the same
 check catalog.
 
-### 4. Check engine
+### 4. Run scope: one state, one demonstration
+
+A run takes one state, one provider type and one demonstration year. The state
+is a run-level parameter, not a column in the canonical model, so nothing has
+to carry a state dimension and no check has to reason about cross-state
+aggregation. The state parameter is what drives CCN prefix validation, the
+provider universe filter, and CMS-64 lookup.
+
+Checking several states means several runs and several reports. If a rollup
+across states is ever wanted, it consumes the JSON findings output rather than
+being built into the engine.
+
+### 5. Supplemental payments as a separate opt-in family
+
+The supplemental payment calculation — the gap between the demonstrated UPL
+and actual Medicaid payments, distributed to providers — is checked by its own
+`SUP` family, and that family is **off by default**. Three reasons it stays
+separate rather than folded into the main run:
+
+- The demonstration and the payment calculation are different artifacts with
+  different review audiences. A UPL demonstration can be correct while the
+  payment allocation built on it is wrong, and the reverse.
+- The payment calculation often lives in a different file than the CMS
+  template. `SUP` checks take an optional second input and report `SKIPPED`
+  when it is not supplied.
+- `SUP` results are only meaningful if the UPL underneath them is sound. When
+  the run has unresolved `ARI` or `PLA` errors, `SUP` findings are reported
+  with an explicit note that the inputs they depend on are themselves
+  suspect — otherwise a single upstream error produces a cascade of downstream
+  noise that buries it.
+
+Enabled with `--include sup` or by configuration.
+
+### 6. Check engine
 
 A registry of independent checks, each with a stable ID, a severity
 (`ERROR` / `WARN` / `INFO`), and a declared dependency on reference data if it
@@ -104,7 +140,7 @@ suite that emits four hundred rows gets ignored after the first run.
 A check whose reference data is unavailable reports `SKIPPED` with the reason.
 It does not fail and it does not silently pass.
 
-### 5. Reference data cache
+### 7. Reference data cache
 
 Source adapters fetch published federal datasets into a dated local snapshot
 under `data/refdata/<source>/<snapshot-date>/`, with a manifest recording
@@ -141,10 +177,11 @@ Seven families. Full detail goes in the specs; this is the shape.
 | `YOY` | Year over year — aggregate and provider-level variance, CCR drift, ownership mix shift, movement against the applicable update factor | Prior year workbook |
 | `UNI` | Provider universe — is every provider that should be in the demonstration actually in it, and is every provider in it real and active | Yes |
 | `EXT` | External reasonableness — CCR recomputed from HCRIS, Medicaid days against the cost report, totals against CMS-64, spot-repricing against published Medicare rates, trend factor against published update factors | Yes |
-| `POL` | Policy conformance — demonstration present per ownership category, aggregate payments within aggregate UPL, supplemental payments within the gap, methodology consistent with the approved SPA | Some |
+| `POL` | Policy conformance — demonstration present per ownership category, aggregate payments within aggregate UPL, methodology consistent with the approved SPA | Some |
+| `SUP` | Supplemental payments, **opt-in** — payment within each provider's gap, allocation formula independently recomputed, allocation shares foot to one, no payment against a zero or negative gap, sum of payments equals the stated total, non-federal share source identified, year-over-year payment variance | Optional second input |
 
 `STR`, `ARI` and `PLA` deliver real value with no external data at all, which
-is why they come first.
+is why they come first. `SUP` is the only family that is off unless asked for.
 
 ### Phasing
 
@@ -155,7 +192,9 @@ Each phase is its own spec and PR.
 2. Check engine, findings, waivers, reporting. Families `STR`, `ARI`, `PLA`.
 3. Families `IDN` and `YOY`. Needs a prior-year workbook, nothing external.
 4. Reference data layer, then `UNI` and `EXT`.
-5. `POL`, reporting polish, second provider type to prove the model holds.
+5. `POL` and `SUP`. `SUP` needs its own spec — the allocation methods vary by
+   state and the second input format is not yet known.
+6. Reporting polish, then a second provider type to prove the model holds.
 
 ## Alternatives considered
 
@@ -226,6 +265,11 @@ Each phase is its own spec and PR.
   needs confirming before phase 4.
 - A waiver file is a place for real problems to go and be forgotten. Expiry
   dates are mandatory for that reason.
+
+**Single state per run costs us:**
+- Nothing today, and it keeps the canonical model and every check simpler. The
+  cost only shows up if a cross-state view is ever wanted, and at that point
+  the JSON findings output is the seam to build it on.
 
 **Locks us into:**
 - Python, pandas, openpyxl.
