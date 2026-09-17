@@ -2,7 +2,6 @@
 
 - **Status:** Proposed
 - **Date:** 2026-09-17
-- **Deciders:** Lauren
 
 ## Context
 
