@@ -28,6 +28,8 @@ data/incoming/
 *.xlsb
 !tests/fixtures/**/*.xlsx
 !tests/fixtures/**/*.xlsm
+# Blank official CMS templates are not sensitive (see ADR-0001 commit policy).
+!templates/**/*.xlsx
 
 # Local editor / OS
 .DS_Store

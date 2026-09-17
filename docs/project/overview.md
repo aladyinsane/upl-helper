@@ -30,14 +30,18 @@ submission to CMS.
 
 ## Hard constraints
 
-- **No network access to CMS sources from the Claude Code web environment.**
-  `medicaid.gov`, all `*.cms.gov`, `healthdata.gov`, `api.census.gov` and
-  `bls.gov` are blocked by egress policy. GitHub and package registries
-  (PyPI) are reachable. Web search returns snippets; direct page fetches of
-  those domains fail.
-- Consequence: the real CMS templates and the real reference datasets cannot
-  be inspected or downloaded here. Anything that depends on their exact
-  layout has to be discovered at runtime in an environment that has them,
+- **Network reachability is per-environment, not a fixed property of "this
+  assistant."** The original Claude Code web session that drafted ADR-0001
+  found `medicaid.gov`, all `*.cms.gov`, `healthdata.gov`, `api.census.gov`
+  and `bls.gov` blocked by egress policy, with GitHub and PyPI reachable.
+  A later Claude Code desktop app session (2026-09-17) reached
+  `medicaid.gov` directly, from both its browser and its shell — see phase 0
+  results in `docs/project/index.md`. Check reachability per session rather
+  than assuming either result.
+- Consequence: the real CMS templates and the real reference datasets may or
+  may not be inspectable or downloadable in a given session. Anything that
+  depends on their exact layout has to be discovered at runtime in an
+  environment that has them,
   not hardcoded from inspection.
 - Lauren cannot reach Claude from her work environment, so files cannot be
   handed over from there either.

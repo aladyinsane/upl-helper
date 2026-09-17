@@ -2,6 +2,36 @@
 
 Newest first.
 
+## 2026-09-17 — Phase 0: templates and guidance acquired
+
+- A Claude Code desktop app session reached `medicaid.gov` directly — both
+  the browser pane and shell `curl` — contradicting the egress block recorded
+  for the earlier Claude Code web session. Reachability is per-session; see
+  `docs/project/overview.md` hard constraints.
+- Downloaded the full 2022-revision UPL reference document set from
+  `medicaid.gov/medicaid/financial-management/payment-limit-demonstrations`
+  for all 8 provider types (guidance PDF + blank `.xlsx` template each),
+  plus SMDL 13-003, the UPL methodology summary, and the revised-template
+  FAQ. Committed under `templates/upl-2022/` per the ADR-0001 commit policy
+  (blank official templates are not sensitive). ~66 MB total.
+- These are CMS's public reference copies, not the fillable MACFin versions —
+  matches the ADR's expectation that MACFin-distributed templates may not be
+  scriptable. Reference copies are enough to build the profiler and mapping
+  against.
+- Quick look at the inpatient hospital template (`openpyxl`, structure only):
+  sheets are `State Attestation`, `Overview & Instructions`, `Data
+  Dictionary`, `Required State Input – IPH`, `IP Cost`, `IP Payment`,
+  `IP DRG`, `IP Per Diem`, `UPL Demonstration Summary`, 15 `Optional_Sheet_N`
+  tabs, and two hidden sheets, `_Controls` and `LKUP`. Workbook structure
+  protection is on. Confirms the ADR's hidden-sheet and protected-workbook
+  assumptions; sheet names differ from anything guessed in the ADR text.
+- Not yet done: phase 0's other half, confirming the real schemas of the
+  external reference datasets in `docs/research/reference-data-sources.md`
+  (POS, HCRIS, NPPES, etc.) — those still need checking from an environment
+  that can reach them.
+- Next: SPEC-0002 (profiler) can now be written against a real template
+  instead of a guess.
+
 ## 2026-09-17 — SPEC-0004 written and implemented
 
 - Check engine, findings, waivers, thresholds, reporting, and 13 checks across
