@@ -18,6 +18,24 @@ as the design intent, not as verified fact.
 | CMS-64 expenditure reports | State expenditures by service category and quarter | Macro reasonableness: do total FFS payments in the demo tie to what the state reported spending |
 | Medicaid SPA / State Plan approval records | Approved methodology and effective dates by state and service | Asserting the workbook's methodology matches what CMS actually approved |
 
+## Phase 0: what to record for each source
+
+This table is design intent, written without being able to open any of these
+sources. Phase 0 replaces the guesses with facts, from an environment that can
+reach CMS. For each source, record in this file:
+
+- The exact download URL and whether it needs authentication
+- File format, size, and update cadence
+- Real column names and dtypes, not paraphrases
+- Grain — one row per what? — and the natural key
+- Coverage: which years exist, and how far back
+- Whether the field a check actually needs is present, absent, or present but
+  not usable
+- If unusable, say so and say why, so nobody re-derives the same dead end
+
+A source that turns out not to hold what the table above assumes should be
+struck from it rather than quietly left in.
+
 ## Notes
 
 - Newer UPL templates and guidance are distributed through MACFin rather than

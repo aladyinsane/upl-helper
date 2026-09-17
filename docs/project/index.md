@@ -2,6 +2,25 @@
 
 Newest first.
 
+## 2026-09-17 — ADR-0001 revised after review
+
+- Review point: the no-network constraint is specific to the Claude Code web
+  environment, not to development generally. Other environments can reach CMS.
+- Reworked the ADR's context around an environment matrix instead of a single
+  blocked environment. Acquisition and checking are now explicitly separable —
+  acquisition may need network and may happen elsewhere; checking never does.
+- Added **phase 0, acquisition reconnaissance**, ahead of everything: from a
+  networked environment, download the blank inpatient template, and confirm
+  the real schemas of the candidate reference datasets. The reference source
+  inventory was written blind and is the largest design risk in the ADR.
+- Separated justifications that were leaning on the constraint from ones that
+  stand on their own. Offline checking and header-based column mapping are
+  right regardless of network; only "the profiler is the only way to see the
+  template" was constraint-dependent, and the profiler has two other reasons
+  to exist.
+- Commit policy clarified: blank official CMS templates can be committed
+  outright; filled workbooks never leave their environment, descriptor only.
+
 ## 2026-09-17 — ADR-0001 drafted
 
 - Scope decided: input is the completed CMS workbook; inpatient hospital

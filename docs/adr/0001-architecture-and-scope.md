@@ -18,11 +18,25 @@ report.
 
 Four constraints shape this more than anything else.
 
-**The template cannot be inspected from here.** `medicaid.gov`, all
-`*.cms.gov`, `healthdata.gov`, Census and BLS are blocked by egress policy in
-the environment this is being built in. The real CMS workbooks live in a work
-environment that has no access to this assistant, and files cannot be handed
-across. So nothing can be written against an inspected copy of the template.
+**Development happens across environments with different reach.** There is no
+single environment that has everything. At minimum there are three:
+
+| | Reaches CMS | Has real filled workbooks | Reaches this assistant |
+|---|---|---|---|
+| Claude Code web (this one) | No — `medicaid.gov`, all `*.cms.gov`, `healthdata.gov`, Census and BLS are blocked by egress policy | No | Yes |
+| Other development environments | Varies — some can | No | Varies |
+| Work environment | Yes | Yes | No |
+
+Nothing can be assumed reachable at any given moment, and the real filled
+workbooks never leave the work environment at all. So **acquisition and
+checking have to be separable**: acquiring a template, a reference dataset or
+a prior-year workbook may require network and may have to happen somewhere
+else, while running checks must never require either.
+
+This is a weaker constraint than "nothing can be inspected", which is what an
+earlier draft assumed. Where an environment can reach CMS, it should be used
+to retire unknowns early rather than working around them. See *Sequencing*
+below.
 
 **CMS revises the templates.** Columns have moved between versions and a PDPM
 tab was added to the nursing facility template. Newer templates are
@@ -33,9 +47,11 @@ bound to fixed cell addresses breaks on the next revision.
 Reading them is possible but the reader has to expect protection rather than
 fail on it.
 
-**Development continues elsewhere.** The next passes happen on a work laptop,
+**Development continues elsewhere.** Later passes happen in other environments,
 possibly with a different agent or by hand. Whatever is built has to be
-legible and runnable without this session's context.
+legible and runnable without this session's context, and has to record what it
+learned about the real templates and datasets rather than leaving that
+knowledge in a conversation.
 
 Scope for the first pass, decided with Lauren:
 
@@ -63,13 +79,28 @@ column headers in order, cell formulas as strings, protection state, named
 ranges, data validation rules.
 
 The descriptor carries structure and formulas only — **no cell values** — so
-it is safe to commit to this repository even though the workbook it came from
-is not.
+it is safe to commit even when the workbook it came from is not.
 
-This is what unblocks everything else. Lauren runs it once in the work
-environment against the real template, commits the descriptor, and the rest of
-the suite can be built and tested anywhere against a faithful description of a
-file that was never copied.
+Commit policy follows from that:
+
+- A **blank official CMS template** downloaded from a public CMS source is not
+  sensitive. Commit the workbook itself, under `templates/`, and the mapping
+  built from it.
+- A **filled workbook** — a real submission, current or prior year — never
+  leaves its environment. Run the profiler against it and commit only the
+  descriptor.
+
+The profiler earns its place for three reasons, not one:
+
+1. It is the only way to work against a template that exists solely in an
+   environment this assistant cannot reach — including the MACFin-distributed
+   versions that may not be publicly downloadable at all.
+2. It diffs a workbook against the template version a mapping was built for,
+   which is how a CMS revision gets detected rather than silently mis-mapped.
+3. It is the input to authoring a new mapping, wherever that happens.
+
+Only the first of those depended on the old "nothing can be inspected"
+assumption. The other two hold regardless.
 
 ### 2. Template mapping, as data
 
@@ -148,9 +179,12 @@ source URL, retrieval time and checksum. Adapters support both direct fetch
 and sideloading a manually downloaded file, since one environment can reach
 CMS and the other cannot.
 
-Checks read the cache. **No check requires a live network call.** Reference
-data is versioned and dated so a prior year's demonstration can be re-checked
-against the data as it stood, not as it stands now.
+Checks read the cache. **No check requires a live network call.** That is not a
+workaround for a blocked environment — it stands on its own. Live fetching
+would make checks non-deterministic, make a re-check of a prior year give a
+different answer than it gave at submission, and make a CMS site outage break
+the suite. Dated snapshots are the right design even in an environment that
+could fetch freely.
 
 ### Testing: synthetic workbooks with injected defects
 
@@ -183,18 +217,51 @@ Seven families. Full detail goes in the specs; this is the shape.
 `STR`, `ARI` and `PLA` deliver real value with no external data at all, which
 is why they come first. `SUP` is the only family that is off unless asked for.
 
-### Phasing
+### Sequencing
 
-Each phase is its own spec and PR.
+Each phase is its own spec and PR, except phase 0.
 
-1. Profiler, canonical model, template mapping format, fixture generator.
-   Deliverable: a command Lauren can run at work immediately.
-2. Check engine, findings, waivers, reporting. Families `STR`, `ARI`, `PLA`.
-3. Families `IDN` and `YOY`. Needs a prior-year workbook, nothing external.
-4. Reference data layer, then `UNI` and `EXT`.
-5. `POL` and `SUP`. `SUP` needs its own spec — the allocation methods vary by
-   state and the second input format is not yet known.
-6. Reporting polish, then a second provider type to prove the model holds.
+**Phase 0 — acquisition reconnaissance.** Runs in whichever environment can
+reach CMS. Not a spec; a scripted errand whose output is committed evidence.
+
+- Probe and record what is actually reachable from that environment. The
+  answer goes in the repo, because it determines what later phases can assume.
+- Download the blank inpatient hospital template and its narrative
+  instructions. Commit them.
+- Pull one snapshot of each candidate reference dataset in
+  `docs/research/reference-data-sources.md` and record its **real** schema —
+  actual column names, keys, grain, coverage, update cadence, file size.
+- Note which sources turn out to be unusable, and why.
+
+This is deliberately first. The largest design risk in this ADR is that the
+external reference sources do not contain what the `UNI` and `EXT` checks
+assume they contain — that inventory was written without being able to open
+any of them. If that is wrong, it is better to find out before the canonical
+model is fixed than after the checks are written against it. Everything else
+in the sequence is robust to being wrong; this is not.
+
+**Phase 1 — profiler, canonical model, template mapping format, fixture
+generator.** Now authored against the real blank template from phase 0 rather
+than against a guess, with the profiler still carrying the filled-workbook and
+version-diff cases.
+
+**Phase 2 — check engine, findings, waivers, reporting.** Families `STR`,
+`ARI`, `PLA`. Full value with no external data.
+
+**Phase 3 — `IDN` and `YOY`.** Needs a prior-year workbook. Nothing external
+beyond what phase 0 confirmed.
+
+**Phase 4 — reference data adapters, then `UNI` and `EXT`.** Written against
+the real schemas recorded in phase 0.
+
+**Phase 5 — `POL` and `SUP`.** `SUP` needs its own spec: allocation methods
+vary by state and the second input format is not yet known.
+
+**Phase 6 — reporting polish, then a second provider type** to prove the
+canonical model stretches.
+
+Phases 1–3 need no network at all and can proceed in parallel with phase 0 if
+that is convenient. Phase 4 is the only one that is genuinely blocked on it.
 
 ## Alternatives considered
 
@@ -218,9 +285,11 @@ Each phase is its own spec and PR.
 ### Bind checks directly to known cell addresses
 - Pros: simplest possible extractor; fastest to write.
 - Cons: breaks on every CMS template revision, and CMS has already moved
-  columns between versions. Also literally impossible from this environment,
-  since the template cannot be inspected.
-- Why not chosen: ruled out by both the maintenance cost and the constraint.
+  columns between versions. Each break is silent — a shifted column reads a
+  plausible number from the wrong field rather than erroring.
+- Why not chosen: the maintenance cost alone rules it out. An earlier draft
+  also cited the inability to inspect the template from this environment;
+  that turns out to be environment-specific and is not the reason.
 
 ### Reimplement the UPL calculation and compare end to end
 - Pros: strongest possible check — an independent answer to compare against.
@@ -258,13 +327,27 @@ Each phase is its own spec and PR.
   checks later. Inpatient hospital first is partly a hedge: it is the richest
   template, so a model that fits it should stretch to the others.
 - Synthetic fixtures test the checks, not the template mapping. Until the
-  profiler runs against a real workbook, the mapping is a guess. That gap
-  closes the first time Lauren runs `upl profile` at work.
+  profiler runs against a real workbook, the mapping is a guess. Phase 0
+  closes most of that gap by getting a real blank template; the rest closes
+  the first time the profiler runs against a filled one.
 - Reference data adapters depend on file layouts nobody here has seen. The
-  inventory in `docs/research/reference-data-sources.md` is design intent and
-  needs confirming before phase 4.
+  inventory in `docs/research/reference-data-sources.md` is design intent, not
+  verified fact, and phase 0 exists specifically to verify it. If several
+  sources turn out not to hold what is assumed, `UNI` and `EXT` shrink and
+  this ADR needs revisiting rather than patching.
+- Phase 0 has no automated test and produces documentation rather than code,
+  which makes it the phase most likely to be skipped or done halfway. Its
+  output is committed evidence for exactly that reason.
 - A waiver file is a place for real problems to go and be forgotten. Expiry
   dates are mandatory for that reason.
+
+**Multiple environments cost us:**
+- A per-environment story for what is reachable, and the discipline to keep it
+  recorded in the repo rather than in someone's head.
+- Acquisition steps that cannot be run or tested from the environment where
+  most of the code gets written. Phase 0 output is the mitigation: once the
+  real schemas are written down, the adapters built against them are ordinary
+  testable code with fixture inputs.
 
 **Single state per run costs us:**
 - Nothing today, and it keeps the canonical model and every check simpler. The
