@@ -2,6 +2,72 @@
 
 Newest first.
 
+## 2026-09-17 — SPEC-0004 written and implemented
+
+- Check engine, findings, waivers, thresholds, reporting, and 13 checks across
+  ARI, PLA, IDN and POL. 159 tests passing.
+- Findings are data with stable fingerprints. The fingerprint deliberately
+  excludes the observed value, so a waiver survives next year's number moving.
+- Waivers require a reason and an expiry, both enforced at load. An expired
+  waiver does not suppress; it surfaces the finding plus a note that it lapsed.
+- Checks that cannot run report SKIPPED with a reason. They never pass quietly.
+- IDN002/IDN003 depend on CCN reference tables written from memory. Those ship
+  marked unverified and the checks **do not run** until someone confirms them.
+- POL002 is the real legal test and is aggregate by ownership category; PLA008
+  is the per-provider warning. Tested that one provider over its own UPL does
+  not trip the aggregate check.
+- Next: STR checks against a profiler descriptor, then the fixture generator,
+  then phase 0 output lands and the provisional mapping gets replaced.
+
+## 2026-09-17 — SPEC-0003 written and implemented
+
+- Canonical model, template mapping format, and extractor. 109 tests passing.
+- Checks will be written against 18 canonical fields at one row per provider
+  per period. Columns resolve by normalized header text, never by position, so
+  a CMS revision that moves columns needs no code change and one that renames
+  a header needs one alias added.
+- Ambiguity is an error, never a guess: two columns matching one field, or one
+  alias under two fields, both fail loudly. Silently picking the leftmost is
+  how a check ends up validating the wrong column.
+- Every row carries provenance (`"Sheet!F12"`), so a finding can point at a
+  cell.
+- Found and fixed a real bug in SPEC-0002's header detection while testing
+  this: a UPL data row is mostly text, so it scored nearly as well as the
+  header above it and got joined as a second header row. Fixed by comparing a
+  candidate's per-column shape against the rows below it, plus a scoring term
+  for how many consistently shaped rows sit underneath. Two regression tests.
+- `config/templates/inpatient-hospital-provisional.yaml` ships **unverified**.
+  Phase 0 replaces it. `upl extract` warns on every run until it is verified.
+- pandas is now a hard dependency.
+- Next: fixture generator, then the check engine.
+
+## 2026-09-17 — SPEC-0002 implemented
+
+- `upl profile` and `upl unprotect` implemented, 72 tests passing.
+- Every acceptance criterion in SPEC-0002 has a test. The redaction rule
+  (AC-13, AC-14) is covered by canary tests in both output formats and both
+  strict modes.
+- One spec amendment: stage 3's entry point is `profile_columns` (plural,
+  single pass) rather than per-column, which would have been quadratic in
+  column count.
+- Verified end to end: a 40-row column of formulas containing one hardcoded
+  constant profiles as `formula: 39, numeric: 1` with a single formula
+  pattern — the signal `STR003` will key on.
+- Next: SPEC-0003, canonical model and template mapping.
+
+## 2026-09-17 — ADR-0001 accepted, SPEC-0002 written
+
+- Phase 0 reviewed and approved. ADR-0001 status flipped to **Accepted**.
+- SPEC-0002 written: template profiler and unprotect utility.
+- Python project scaffolding: `pyproject.toml`, `src/` layout, a CLI with
+  decorator-based subcommand registration, ruff + pytest config, GitHub
+  Actions CI on 3.11 and 3.12.
+- Key design point in SPEC-0002: the descriptor carries no cell values except
+  header text and formula strings, and that rule is enforced by a canary test
+  rather than by convention, because descriptors get committed publicly while
+  the workbooks they describe contain real payment data.
+- Next: implement SPEC-0002.
+
 ## 2026-09-17 — ADR-0001 revised after review
 
 - Review point: the no-network constraint is specific to the Claude Code web

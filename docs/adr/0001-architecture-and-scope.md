@@ -1,6 +1,6 @@
 # ADR-0001: Architecture and scope for the UPL check suite
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-17
 
 ## Context

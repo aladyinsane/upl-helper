@@ -1,0 +1,22 @@
+# Default thresholds for the check suite.
+#
+# Copy this file, edit, and pass with --thresholds. Every bound the checks use
+# lives here rather than in code: states differ, and a threshold nobody can
+# tune gets ignored instead of fixed.
+
+# Money comparisons tie to the cent.
+money_abs_tol: 0.01
+ratio_abs_tol: 0.0005
+
+# GUESSED. Real state data should set these. See SPEC-0004, open question 1.
+ccr_min: 0.05
+ccr_max: 1.20
+
+# Modified z-score above which a per-unit value is called an outlier. 3.5 is
+# the conventional starting point; lower catches more and cries wolf more.
+outlier_mad_threshold: 3.5
+outlier_min_rows: 8
+
+# Benford is meaningless on a small population.
+benford_min_rows: 50
+benford_max_abs_deviation: 0.08
