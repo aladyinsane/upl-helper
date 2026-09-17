@@ -132,7 +132,7 @@ sheets:
           - ccr
           - cost-to-charge ratio
         required: false
-      trend_factor:
+      medicaid_trend_factor:
         aliases:
           - trend factor
           - inflation factor

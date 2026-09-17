@@ -61,6 +61,38 @@ def test_ari005_passes_when_they_sum() -> None:
     assert list(ari005_payment_components(make_context([provider()]))) == []
 
 
+def test_ari005_inflates_base_before_summing() -> None:
+    """A trend factor other than 1.0 applies to base payments only, per CMS's
+    own formula (inpatient hospital variable 318) -- not to supplemental."""
+    ctx = make_context(
+        [
+            provider(
+                medicaid_trend_factor=1.10,
+                medicaid_payments_total=430_000.0,  # 100_000 + (300_000 * 1.10)
+            )
+        ]
+    )
+    assert list(ari005_payment_components(ctx)) == []
+
+
+def test_ari005_flags_a_total_that_ignores_the_trend_factor() -> None:
+    ctx = make_context(
+        [provider(medicaid_trend_factor=1.10)]
+    )  # total stays the un-inflated default, 400_000.0
+    findings = list(ari005_payment_components(ctx))
+    assert len(findings) == 1
+    assert findings[0].expected == 430_000.0
+
+
+def test_ari005_treats_missing_factors_as_no_change() -> None:
+    """A mapping that never supplies the factor fields gets the pre-fix
+    behaviour: total == base + supplemental, unscaled."""
+    ctx = make_context(
+        [provider(medicaid_trend_factor=None, medicaid_other_adjustment_factor=None)]
+    )
+    assert list(ari005_payment_components(ctx)) == []
+
+
 def test_ari006_flags_cost_that_does_not_follow_from_the_ccr() -> None:
     ctx = make_context([provider(medicaid_cost=900_000.0)])
     findings = list(ari006_cost_from_ccr(ctx))

@@ -227,8 +227,90 @@ def test_upl_gap_is_not_computed_by_the_extractor(tmp_path: Path) -> None:
     assert extraction.frame["upl_gap"].isna().all()
 
 
+def test_extraction_reads_calculated_values_not_formula_text(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Some real templates compute every demonstration cell by formula from a
+    separate input sheet (the inpatient hospital methodology tabs do). If
+    extraction opened the workbook the way the profiler does -- formulas as
+    text -- every field on such a template would extract as a formula
+    string instead of a value. Pin the wiring: extraction must open with
+    data_only=True.
+    """
+    import upl_helper.profile.loader as loader_module
+
+    original_load_workbook = loader_module.openpyxl.load_workbook
+    seen: dict[str, object] = {}
+
+    def spy(*args: object, **kwargs: object):
+        seen.update(kwargs)
+        return original_load_workbook(*args, **kwargs)
+
+    monkeypatch.setattr(loader_module.openpyxl, "load_workbook", spy)
+    extract_path(upl_workbook(tmp_path / "wb.xlsx"), mapping())
+    assert seen["data_only"] is True
+
+
 def test_report_summary_is_printable(tmp_path: Path) -> None:
     book = upl_workbook(tmp_path / "wb.xlsx", extra_sheet="Notes", total_row=True)
     summary = extract_path(book, mapping()).report.summary()
     assert "extracted 3 row(s)" in summary
     assert "Notes" in summary
+
+
+def _workbook_with_instructions_gap(path: Path) -> Path:
+    """Header at row 1, a blank row 2, an instructions row at row 3, data at row 4.
+
+    Mirrors the real inpatient hospital UPL template's methodology tabs: a
+    blank row and an instructions row separate the header from the first
+    real provider row, rather than data starting immediately below it.
+    """
+    from openpyxl import Workbook
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Demo"
+    sheet["A1"] = "provider name"
+    sheet["B1"] = "ccn"
+    sheet["A3"] = "Obtain from Medicare Cost Reports"
+    sheet["B3"] = "Obtain from Medicare Cost Reports"
+    sheet["A4"] = "Example Hospital"
+    sheet["B4"] = "140001"
+    workbook.save(path)
+    return path
+
+
+def _gap_mapping(start_row: int | None) -> dict:
+    payload = copy.deepcopy(MINIMAL)
+    payload["sheets"][0]["fields"] = {
+        "provider_name": {"aliases": ["provider name"]},
+        "ccn": {"aliases": ["ccn"]},
+    }
+    payload["sheets"][0]["key_field"] = "ccn"
+    payload["sheets"][0]["header"] = {"rows": [1]}
+    if start_row is not None:
+        payload["sheets"][0]["data_rows"] = {"start_row": start_row}
+    return payload
+
+
+def test_start_row_override_skips_a_gap_between_header_and_data(
+    tmp_path: Path,
+) -> None:
+    book = _workbook_with_instructions_gap(tmp_path / "wb.xlsx")
+    frame = extract_path(book, parse_mapping(_gap_mapping(start_row=4))).frame
+    assert list(frame["provider_name"]) == ["Example Hospital"]
+
+
+def test_without_start_row_a_gap_stops_extraction_before_any_real_data(
+    tmp_path: Path,
+) -> None:
+    """The failure mode `start_row` exists to fix, pinned down as a test.
+
+    Without the override, extraction assumes data starts immediately below
+    the header, hits the blank row 2 first, and (with the default
+    stop_on_blank_key) stops there -- silently extracting zero providers
+    from a workbook that has one.
+    """
+    book = _workbook_with_instructions_gap(tmp_path / "wb.xlsx")
+    frame = extract_path(book, parse_mapping(_gap_mapping(start_row=None))).frame
+    assert frame.empty

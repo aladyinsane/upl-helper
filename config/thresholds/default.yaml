@@ -8,9 +8,10 @@
 money_abs_tol: 0.01
 ratio_abs_tol: 0.0005
 
-# GUESSED. Real state data should set these. See SPEC-0004, open question 1.
+# ccr_min is still GUESSED (see SPEC-0004, open question 1). ccr_max is set
+# from real-world domain knowledge, 2026-09-17.
 ccr_min: 0.05
-ccr_max: 1.20
+ccr_max: 3.00
 
 # Modified z-score above which a per-unit value is called an outlier. 3.5 is
 # the conventional starting point; lower catches more and cries wolf more.

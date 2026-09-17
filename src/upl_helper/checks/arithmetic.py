@@ -46,8 +46,21 @@ def ari004_gap_arithmetic(ctx: CheckContext) -> Iterator[Finding]:
             )
 
 
-@check("ARI005", "ARI", "Total payments equal base plus supplemental", Severity.ERROR)
+@check(
+    "ARI005",
+    "ARI",
+    "Total payments equal inflated base plus supplemental",
+    Severity.ERROR,
+)
 def ari005_payment_components(ctx: CheckContext) -> Iterator[Finding]:
+    """Total Medicaid payments is not a plain footing sum.
+
+    CMS's own formula (inpatient hospital, variable 318) inflates only the
+    base payment before adding supplemental: total = supplemental +
+    (base * medicaid_trend_factor * medicaid_other_adjustment_factor). Both
+    factors default to 1.0 (CMS convention for "no change"), which collapses
+    this to a plain sum when a mapping does not supply them.
+    """
     ctx.require_fields(
         "medicaid_payments_total",
         "medicaid_payments_base",
@@ -55,14 +68,22 @@ def ari005_payment_components(ctx: CheckContext) -> Iterator[Finding]:
     )
     tol = ctx.thresholds.money_abs_tol
 
-    for row, record in _rows_with(
+    rows = _rows_with(
         ctx.frame,
         "medicaid_payments_total",
         "medicaid_payments_base",
         "medicaid_payments_supplemental",
-    ).iterrows():
-        expected = (
-            record["medicaid_payments_base"] + record["medicaid_payments_supplemental"]
+    )
+    trend = ctx.frame.get("medicaid_trend_factor")
+    adjustment = ctx.frame.get("medicaid_other_adjustment_factor")
+
+    for row, record in rows.iterrows():
+        trend_factor = 1.0 if trend is None or pd.isna(trend[row]) else trend[row]
+        adjustment_factor = (
+            1.0 if adjustment is None or pd.isna(adjustment[row]) else adjustment[row]
+        )
+        expected = record["medicaid_payments_supplemental"] + (
+            record["medicaid_payments_base"] * trend_factor * adjustment_factor
         )
         observed = record["medicaid_payments_total"]
         if abs(observed - expected) > tol:
@@ -73,8 +94,8 @@ def ari005_payment_components(ctx: CheckContext) -> Iterator[Finding]:
                 subject=ctx.subject(row),
                 field="medicaid_payments_total",
                 message=(
-                    f"total payments {observed:,.2f} do not equal base plus "
-                    f"supplemental ({expected:,.2f})"
+                    f"total payments {observed:,.2f} do not equal inflated base "
+                    f"plus supplemental ({expected:,.2f})"
                 ),
                 observed=float(observed),
                 expected=float(expected),

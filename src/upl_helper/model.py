@@ -56,11 +56,43 @@ CANONICAL_FIELDS: tuple[FieldSpec, ...] = (
     FieldSpec("medicaid_days", Dtype.NUMBER, False, "Medicaid inpatient days"),
     FieldSpec("medicaid_discharges", Dtype.NUMBER, False, "Medicaid discharges"),
     FieldSpec("medicaid_charges", Dtype.MONEY, False, "Medicaid covered charges"),
-    FieldSpec("cost_to_charge_ratio", Dtype.RATIO, False, "CCR"),
-    FieldSpec("trend_factor", Dtype.RATIO, False, "Inflation / update factor applied"),
+    FieldSpec(
+        "cost_to_charge_ratio",
+        Dtype.RATIO,
+        False,
+        "CCR, cost-based methodology's Medicare-side conversion ratio",
+    ),
+    FieldSpec(
+        "payment_to_charge_ratio",
+        Dtype.RATIO,
+        False,
+        "PTC, payment-based methodology's analog to the CCR",
+    ),
     FieldSpec("medicaid_cost", Dtype.MONEY, False, "Medicaid cost, the UPL basis"),
+    FieldSpec(
+        "upl_trend_factor",
+        Dtype.RATIO,
+        False,
+        "Factor inflating the calculated UPL basis to the demonstration year, "
+        "distinct from medicaid_trend_factor",
+    ),
     FieldSpec("upl_amount", Dtype.MONEY, True, "Demonstrated upper payment limit"),
     FieldSpec("medicaid_payments_base", Dtype.MONEY, False, "Base FFS payments"),
+    FieldSpec(
+        "medicaid_trend_factor",
+        Dtype.RATIO,
+        False,
+        "Factor inflating base Medicaid payments to the demonstration year, "
+        "distinct from upl_trend_factor. Applies to base payments only, not "
+        "supplemental.",
+    ),
+    FieldSpec(
+        "medicaid_other_adjustment_factor",
+        Dtype.RATIO,
+        False,
+        "Non-inflation adjustment factor (e.g. volume) applied alongside "
+        "medicaid_trend_factor to base payments only",
+    ),
     FieldSpec(
         "medicaid_payments_supplemental", Dtype.MONEY, False, "Supplemental payments"
     ),

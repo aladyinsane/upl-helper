@@ -114,7 +114,9 @@ def _extract_sheet(
     columns = resolved.resolution.columns
     sheet_name = resolved.name
 
-    first_row = (max(resolved.header_rows) if resolved.header_rows else 0) + 1
+    first_row = rule.data_rows.start_row or (
+        (max(resolved.header_rows) if resolved.header_rows else 0) + 1
+    )
     last_row = worksheet.max_row or 0
     skipped = defaultdict(int)
 
@@ -241,5 +243,8 @@ def extract_path(
     mapping: TemplateMapping,
     context: ExtractionContext | None = None,
 ) -> Extraction:
-    loaded = load_workbook_structure(workbook_path)
+    # data_only=True: some real templates compute every demonstration cell by
+    # formula from a separate input sheet, so extraction needs the cached
+    # calculated value, not the formula string. See load_workbook_structure.
+    loaded = load_workbook_structure(workbook_path, data_only=True)
     return extract(loaded.workbook, mapping, context)
